@@ -12,14 +12,10 @@ TELEGRAM_BOT_TOKEN = "8783937056:AAFtpytdK_hnNRfsRi0DB4V4cOqD0P1EAn0"
 TELEGRAM_CHAT_ID = "6250328228"
 
 
-
 def akilli_uyari_gonder(mesaj: str) -> bool:
-  """Telegram üzerinden anlık akıllı uyarı / bildirim gönderir.
-
-  (Özel karakter ve markdown hatalarını önlemek için sadeleştirilmiştir.)
-  """
+  """Telegram üzerinden anlık akıllı uyarı / bildirim gönderir."""
   url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-  payload = {"chat_id": TELEGRAM_CHAT_ID, "text": mesaj}
+  payload = {"chat_id": TELEGRAM_CHAT_ID, "text": mesaj, "parse_mode": "Markdown"}
   try:
     response = requests.post(url, json=payload, timeout=5)
     return response.status_code == 200
@@ -363,8 +359,9 @@ with st.sidebar:
 
       toplam_eklenen_net = sum([item["Net"] for item in yeni_kayitlar])
       telegram_mesaj = (
-          f"Yeni Deneme Kaydedildi!\n\nYayın: {yayin}\nTür:"
-          f" {kayit_turu}\nToplam Net: {toplam_eklenen_net:.2f}\n\nBaşarılar!"
+          f"🚀 **Yeni Deneme Kaydedildi!**\n\n📌 Yayın: {yayin}\n📋 Tür:"
+          f" {kayit_turu}\n📊 Toplam Net: *{toplam_eklenen_net:.2f}*\n\n💪"
+          " Çalışmalara tam gaz devam!"
       )
       akilli_uyari_gonder(telegram_mesaj)
 
@@ -479,8 +476,8 @@ with tab_konu:
 
   if st.button("📲 Telegram'a Test Uyarı Gönder"):
     test_mesaji = (
-        "AKILLI KOC UYARISI\n\nTest mesaji basariyla gonderildi!\ncalismalara"
-        " tam gaz devam."
+        "🤖 **AKILLI KOÇ UYARISI**\n\n✅ Test mesajı başarıyla"
+        " gönderildi!\n🎯 Çalışmalara tam gaz devam."
     )
     if akilli_uyari_gonder(test_mesaji):
       st.success("Test bildirimi Telegram'a iletildi!")
@@ -499,8 +496,8 @@ with tab_program:
 with tab_hatirlatici:
   st.header("⏰ Saatlik Görev & Ders Hatırlatıcı")
   st.write(
-      "Belirli saatlere özel hatırlatıcılar kurun (Kurduğunuz an Telegram'a"
-      " gelecektir):"
+      "Belirli saatlere özel ders veya konu hatırlatıcıları kurun (Kurduğunuz"
+      " an Telegram'a gelecektir):"
   )
 
   col_s1, col_s2, col_s3 = st.columns([2, 4, 2])
@@ -519,9 +516,9 @@ with tab_hatirlatici:
       df_hatirlatici = pd.concat([df_hatirlatici, yeni_h], ignore_index=True)
       df_hatirlatici.to_csv(REMINDER_FILE, index=False)
 
-      # Telegram bildirim mesajı (özel karakter içermez)
       tg_mesaj = (
-          f"Yeni Hatırlatıcı Kuruldu!\n\nSaat: {saat_input}\nGörev: {gorev_input}"
+          f"⏰ **Yeni Hatırlatıcı Kuruldu!**\n\n📌 Saat: {saat_input}\n🎯 Görev:"
+          f" {gorev_input}"
       )
       akilli_uyari_gonder(tg_mesaj)
 
