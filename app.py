@@ -12,6 +12,7 @@ TELEGRAM_BOT_TOKEN = "8783937056:AAFtpytdK_hnNRfsRi0DB4V4cOqD0P1EAn0"
 TELEGRAM_CHAT_ID = "6250328228"
 
 
+
 def akilli_uyari_gonder(mesaj: str) -> bool:
   """Telegram üzerinden anlık akıllı uyarı / bildirim gönderir.
 
