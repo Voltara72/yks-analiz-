@@ -8,14 +8,17 @@ import streamlit as st
 # ==========================================
 # TELEGRAM BOT VE KULLANICI BİLGİLERİ
 # ==========================================
-TELEGRAM_BOT_TOKEN = "8783937056:AAEIjrGuQoybPddT7onIshrftA1C6zdHE68"
+TELEGRAM_BOT_TOKEN = "8783937056:AAFtpytdK_hnNRfsRi0DB4V4cOqD0P1EAn0"
 TELEGRAM_CHAT_ID = "6250328228"
 
 
 def akilli_uyari_gonder(mesaj: str) -> bool:
-  """Telegram üzerinden anlık akıllı uyarı / bildirim gönderir."""
+  """Telegram üzerinden anlık akıllı uyarı / bildirim gönderir.
+
+  (Özel karakter ve markdown hatalarını önlemek için sadeleştirilmiştir.)
+  """
   url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-  payload = {"chat_id": TELEGRAM_CHAT_ID, "text": mesaj, "parse_mode": "Markdown"}
+  payload = {"chat_id": TELEGRAM_CHAT_ID, "text": mesaj}
   try:
     response = requests.post(url, json=payload, timeout=5)
     return response.status_code == 200
@@ -45,7 +48,7 @@ KONULAR = {
     ],
     "Matematik": [
         "Temel Kavramlar & Sayı Kümeleri",
-        "Bölme & Bölünebilme Rules",
+        "Bölme & Bölünebilme Kuralları",
         "EBOB - EKOK",
         "Birinci Dereceden Denklem ve Eşitsizlikler",
         "Mutlak Değer",
@@ -58,9 +61,8 @@ KONULAR = {
         "Karışım Problemleri",
         "Hareket Problemleri",
         "İşçi & Havuz Problemleri",
-        "Mantar & Rutin Olmayan Problemler",
+        "Rutin Olmayan Problemler",
         "Kümeler & Mantık",
-        "Mantık",
         "Fonksiyonlar (Temel & Grafikler)",
         "Polinomlar",
         "İkinci Dereceden Denklemler",
@@ -95,7 +97,7 @@ KONULAR = {
         "Fizik Bilimine Giriş & Madde Özellikleri",
         "Vektörler & Tork / Denge",
         "Kütle Merkezi & Basit Makineler",
-        "Hareket & Dinamik (Newton Laws)",
+        "Hareket & Dinamik",
         "İş, Güç ve Enerji",
         "Atışlar",
         "İtme ve Momentum",
@@ -107,8 +109,7 @@ KONULAR = {
         "Çembersel Hareket & Kepler",
         "Basit Harmonik Hareket",
         "Dalgalar & Optik",
-        "Atom Fizigi & Radyoaktivite",
-        "Modern Fizik & Teknolojik Uygulamalar",
+        "Modern Fizik",
     ],
     "Kimya": [
         "Kimya Bilimi & Atomun Yapısı",
@@ -117,23 +118,23 @@ KONULAR = {
         "Maddenin Halleri & Gazlar",
         "Mol Kavramı & Kimyasal Hesaplamalar",
         "Çözeltiler & Çözünürlük",
-        "Kimya ve Enerji (Tepkime Isısı)",
+        "Kimya ve Enerji",
         "Tepkime Hızları & Kimyasal Denge",
         "Asitler, Bazlar ve Tuzlar",
         "Çözünürlük Dengesi (KÇÇ)",
-        "Kimya ve Elektrik (Piller & Elektroliz)",
-        "Organik Kimyaya Giriş & Hibritleşme",
-        "Hidrokarbonlar & Fonksiyonel Gruplar",
+        "Kimya ve Elektrik",
+        "Organik Kimyaya Giriş",
+        "Hidrokarbonlar",
     ],
     "Biyoloji": [
         "Yaşam Bilimi Biyoloji & Hücre",
         "Canlıların Sınıflandırılması",
         "Hücre Bölünmeleri & Üreme",
         "Kalıtım & Ekosistem Ekolojisi",
-        "Hücresel Solunum & Fotosentez/Kemosentez",
+        "Hücresel Solunum & Fotosentez",
         "İnsan Fizyolojisi (Sistemler)",
         "Nükleik Asitler & Protein Sentezi",
-        "Biyoteknoloji & Gen Mühendisliği",
+        "Biyoteknoloji",
     ],
     "Tarih": [
         "Tarih Bilimi & İlk Çağ Uygarlıkları",
@@ -143,26 +144,26 @@ KONULAR = {
         "Osmanlı Kültür ve Medeniyeti",
         "20. Yüzyıl Başlarında Osmanlı",
         "Milli Mücadele Dönemi & İnkılaplar",
-        "Atatürkçülük & Çağdaş Türk ve Dünya Tarihi",
+        "Atatürkçülük",
     ],
     "Coğrafya": [
         "Doğa ve İnsan & Harita Bilgisi",
         "Dünyanın Şekli ve Hareketleri",
         "Coğrafi Konum & İklim Bilgisi",
-        "Yerin Şekillenmesi (İç & Dış Kuvvetler)",
+        "Yerin Şekillenmesi",
         "Nüfus ve Yerleşme",
         "Türkiye'nin Fiziki & Beşeri Özellikleri",
-        "Küresel Ortam: Bölgeler ve Ülkeler",
+        "Küresel Ortam",
         "Çevre ve Toplum",
     ],
     "Felsefe & Din": [
         "Felsefeyi Tanıma & Bilgi Felsefesi",
         "Varlık & Ahlak Felsefesi",
         "Sanat, Din & Siyaset Felsefesi",
-        "15.-17. Yüzyıl Felsefesi & Modern Düşünce",
+        "15.-17. Yüzyıl Felsefesi",
         "Kur'an-ı Kerim ve Temel Kavramlar",
         "Hz. Muhammed'in Hayatı & Ahlakı",
-        "İslam Düşüncesinde Yorumlar & Mezhepler",
+        "İslam Düşüncesinde Yorumlar",
     ],
 }
 
@@ -226,12 +227,12 @@ aktif_hatirlaticilar = df_hatirlatici[df_hatirlatici["Saat"] == suan_saat]
 if not aktif_hatirlaticilar.empty:
   for _, row in aktif_hatirlaticilar.iterrows():
     st.toast(
-        f"🔔 HATIRLATICI: Saat {row['Saat']} - {row['Görev / Ders']} zamanı!",
+        f"HATIRLATICI: Saat {row['Saat']} - {row['Görev / Ders']} zamanı!",
         icon="⏰",
     )
     st.warning(
-        f"⏰ **Saatlik Hatırlatıcı ({row['Saat']}):** {row['Görev / Ders']}"
-        " çalışmanız gerekiyor!"
+        f"Saatlik Hatırlatıcı ({row['Saat']}): {row['Görev / Ders']} çalışmanız"
+        " gerekiyor!"
     )
 
 # SOL MENÜ - VERİ GİRİŞİ
@@ -361,11 +362,8 @@ with st.sidebar:
 
       toplam_eklenen_net = sum([item["Net"] for item in yeni_kayitlar])
       telegram_mesaj = (
-          f"📊 *Yeni Deneme Kaydedildi!*\n\n"
-          f"📌 *Yayın:* {yayin}\n"
-          f"📋 *Tür:* {kayit_turu}\n"
-          f"🔥 *Toplam/Net Puan:* **{toplam_eklenen_net:.2f}**\n\n"
-          f"_Detaylar sisteme işlendi, başarılar!_"
+          f"Yeni Deneme Kaydedildi!\n\nYayın: {yayin}\nTür:"
+          f" {kayit_turu}\nToplam Net: {toplam_eklenen_net:.2f}\n\nBaşarılar!"
       )
       akilli_uyari_gonder(telegram_mesaj)
 
@@ -461,13 +459,10 @@ with tab_konu:
     if not kritik_konular.empty:
       st.error(
           "🚨 **AKILLI KOÇ UYARISI:** Aşağıdaki konularda üst üste hatalar"
-          " yapıyorsunuz! Acil tekrar ve soru çözümü önerilir:"
+          " yapıyorsunuz!"
       )
       for _, row in kritik_konular.iterrows():
-        st.warning(
-            f"👉 **{row['Konu']}**: Toplam **{row['Hata Sayısı']}** kez yanlış"
-            " yapıldı!"
-        )
+        st.warning(f"👉 {row['Konu']}: Toplam {row['Hata Sayısı']} kez yanlış!")
 
     fig_hata = px.bar(
         hata_df.head(15),
@@ -483,9 +478,8 @@ with tab_konu:
 
   if st.button("📲 Telegram'a Test Uyarı Gönder"):
     test_mesaji = (
-        "⚠️ *AKILLI KOÇ UYARISI*\n\n"
-        "Analiz paneli üzerinden manuel uyarı tetiklendi.\n"
-        "📌 _Çalışma programınızı kontrol etmeyi unutmayın!_"
+        "AKILLI KOC UYARISI\n\nTest mesaji basariyla gonderildi!\ncalismalara"
+        " tam gaz devam."
     )
     if akilli_uyari_gonder(test_mesaji):
       st.success("Test bildirimi Telegram'a iletildi!")
@@ -493,8 +487,6 @@ with tab_konu:
 # 5. DERS PROGRAMI
 with tab_program:
   st.header("📅 Haftalık Ders Çalışma Programım")
-  st.write("Haftalık çalışma planınızı düzenleyin ve kaydedin:")
-
   duzenlenmis_program = st.data_editor(
       df_program, num_rows="fixed", use_container_width=True
   )
@@ -506,8 +498,8 @@ with tab_program:
 with tab_hatirlatici:
   st.header("⏰ Saatlik Görev & Ders Hatırlatıcı")
   st.write(
-      "Belirli saatlere özel ders veya konu hatırlatıcıları kurun (Kurduğunuz"
-      " an Telegram'a gelecektir):"
+      "Belirli saatlere özel hatırlatıcılar kurun (Kurduğunuz an Telegram'a"
+      " gelecektir):"
   )
 
   col_s1, col_s2, col_s3 = st.columns([2, 4, 2])
@@ -526,11 +518,9 @@ with tab_hatirlatici:
       df_hatirlatici = pd.concat([df_hatirlatici, yeni_h], ignore_index=True)
       df_hatirlatici.to_csv(REMINDER_FILE, index=False)
 
-      # Telegram'a anında bildirim gönderen kısım
+      # Telegram bildirim mesajı (özel karakter içermez)
       tg_mesaj = (
-          f"⏰ *Yeni Hatırlatıcı Kuruldu!*\n\n"
-          f"📌 *Saat:* {saat_input}\n"
-          f"🎯 *Görev:* {gorev_input}"
+          f"Yeni Hatırlatıcı Kuruldu!\n\nSaat: {saat_input}\nGörev: {gorev_input}"
       )
       akilli_uyari_gonder(tg_mesaj)
 
