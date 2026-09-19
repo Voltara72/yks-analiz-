@@ -302,12 +302,9 @@ with st.sidebar:
     y = c2.number_input("Yanlış", min_value=0, max_value=40, value=0)
     net = d - (y * 0.25)
 
-    # Matematik seçilirse Geometri konuları da listeye dahil edilsin
     secilen_konular_listesi = KONULAR[secilen_ders]
     if secilen_ders == "Matematik":
-      secilen_konular_listesi = (
-          KONULAR["Matematik"] + KONULAR["Geometri"]
-      )  # Matematik + Geometri birleşti
+      secilen_konular_listesi = KONULAR["Matematik"] + KONULAR["Geometri"]
 
     hatalar = st.multiselect("Eksik Konular", secilen_konular_listesi)
     if d > 0 or y > 0:
@@ -359,15 +356,34 @@ with tab_tyt:
     toplam_tyt = (
         tyt_df.groupby(["Tarih", "Yayın/Deneme Adı"])["Net"].sum().reset_index()
     )
-    fig = px.line(
-        toplam_tyt,
-        x="Tarih",
-        y="Net",
-        text="Net",
-        hover_data=["Yayın/Deneme Adı"],
-        title="TYT Toplam Net Gelişimi",
-        markers=True,
+
+    # Grafik Türü Seçimi
+    grafik_turu = st.radio(
+        "TYT İçin Grafik Türü Seçin:",
+        ["Çizgi Grafiği", "Pasta / Dağılım Grafiği (Bar)"],
+        horizontal=True,
+        key="tyt_grafik_tipi",
     )
+
+    if grafik_turu == "Çizgi Grafiği":
+      fig = px.line(
+          toplam_tyt,
+          x="Tarih",
+          y="Net",
+          text="Net",
+          hover_data=["Yayın/Deneme Adı"],
+          title="TYT Toplam Net Gelişimi",
+          markers=True,
+      )
+    else:
+      fig = px.bar(
+          toplam_tyt,
+          x="Yayın/Deneme Adı",
+          y="Net",
+          text="Net",
+          color="Net",
+          title="TYT Yayın Bazlı Net Dağılımı",
+      )
     st.plotly_chart(fig, use_container_width=True)
   else:
     st.info("Henüz TYT denemesi eklenmedi.")
@@ -380,15 +396,34 @@ with tab_ayt:
     toplam_ayt = (
         ayt_df.groupby(["Tarih", "Yayın/Deneme Adı"])["Net"].sum().reset_index()
     )
-    fig_ayt = px.line(
-        toplam_ayt,
-        x="Tarih",
-        y="Net",
-        text="Net",
-        hover_data=["Yayın/Deneme Adı"],
-        title="AYT Toplam Net Gelişimi",
-        markers=True,
+
+    # Grafik Türü Seçimi
+    grafik_turu_ayt = st.radio(
+        "AYT İçin Grafik Türü Seçin:",
+        ["Çizgi Grafiği", "Pasta / Dağılım Grafiği (Bar)"],
+        horizontal=True,
+        key="ayt_grafik_tipi",
     )
+
+    if grafik_turu_ayt == "Çizgi Grafiği":
+      fig_ayt = px.line(
+          toplam_ayt,
+          x="Tarih",
+          y="Net",
+          text="Net",
+          hover_data=["Yayın/Deneme Adı"],
+          title="AYT Toplam Net Gelişimi",
+          markers=True,
+      )
+    else:
+      fig_ayt = px.bar(
+          toplam_ayt,
+          x="Yayın/Deneme Adı",
+          y="Net",
+          text="Net",
+          color="Net",
+          title="AYT Yayın Bazlı Net Dağılımı",
+      )
     st.plotly_chart(fig_ayt, use_container_width=True)
   else:
     st.info("Henüz AYT denemesi eklenmedi.")
@@ -401,15 +436,32 @@ with tab_brans:
   )
   brans_df = df_veriler[df_veriler["Ders"] == secilen_brans]
   if not brans_df.empty:
-    fig_brans = px.line(
-        brans_df,
-        x="Tarih",
-        y="Net",
-        color="Kayıt Türü",
-        hover_data=["Yayın/Deneme Adı"],
-        title=f"{secilen_brans} Net Gelişimi",
-        markers=True,
+    grafik_turu_brans = st.radio(
+        "Branş İçin Grafik Türü Seçin:",
+        ["Çizgi Grafiği", "Pasta / Dağılım Grafiği (Bar)"],
+        horizontal=True,
+        key="brans_grafik_tipi",
     )
+
+    if grafik_turu_brans == "Çizgi Grafiği":
+      fig_brans = px.line(
+          brans_df,
+          x="Tarih",
+          y="Net",
+          color="Kayıt Türü",
+          hover_data=["Yayın/Deneme Adı"],
+          title=f"{secilen_brans} Net Gelişimi",
+          markers=True,
+      )
+    else:
+      fig_brans = px.bar(
+          brans_df,
+          x="Yayın/Deneme Adı",
+          y="Net",
+          color="Kayıt Türü",
+          barmode="group",
+          title=f"{secilen_brans} Yayın Bazlı Net Dağılımı",
+      )
     st.plotly_chart(fig_brans, use_container_width=True)
   else:
     st.info(f"Henüz {secilen_brans} branşına ait veri girilmedi.")
