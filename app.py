@@ -166,10 +166,9 @@ KONULAR = {
 
 DATA_FILE = "deneme_verileri.csv"
 REMINDER_FILE = "hatirlaticilar.csv"
-PROGRAM_FILE = "ders_programi.csv"
+PROGRAM_IMG_FILE = "ders_programi.png"
 
 
-# VERİ YÜKLEME / KAYDETME FONKSİYONLARI
 def verileri_yukle():
   if os.path.exists(DATA_FILE):
     return pd.read_csv(DATA_FILE)
@@ -188,49 +187,13 @@ def verileri_yukle():
 def hatirlaticilari_yukle():
   if os.path.exists(REMINDER_FILE):
     return pd.read_csv(REMINDER_FILE)
-  return pd.DataFrame(columns=["Saat", "Görev / Ders", "Durum"])
-
-
-def programi_yukle():
-  if os.path.exists(PROGRAM_FILE):
-    return pd.read_csv(PROGRAM_FILE)
-  gunler = [
-      "Pazartesi",
-      "Salı",
-      "Çarşamba",
-      "Perşembe",
-      "Cuma",
-      "Cumartesi",
-      "Pazar",
-  ]
-  return pd.DataFrame({
-      "Gün": gunler,
-      "Sabah Blok": [""] * 7,
-      "Öğle Blok": [""] * 7,
-      "Akşam Blok": [""] * 7,
-  })
+  return pd.DataFrame(columns=["Tarih", "Saat", "Görev / Ders", "Durum"])
 
 
 df_veriler = verileri_yukle()
 df_hatirlatici = hatirlaticilari_yukle()
-df_program = programi_yukle()
 
 st.title("🎓 YKS Detaylı Analiz & Akıllı Koçluk Paneli")
-
-# TEPEDEKİ BİLDİRİM / HATIRLATICI CANLI UYARI SİSTEMİ
-suan_saat = datetime.now().strftime("%H:%M")
-aktif_hatirlaticilar = df_hatirlatici[df_hatirlatici["Saat"] == suan_saat]
-
-if not aktif_hatirlaticilar.empty:
-  for _, row in aktif_hatirlaticilar.iterrows():
-    st.toast(
-        f"HATIRLATICI: Saat {row['Saat']} - {row['Görev / Ders']} zamanı!",
-        icon="⏰",
-    )
-    st.warning(
-        f"Saatlik Hatırlatıcı ({row['Saat']}): {row['Görev / Ders']} çalışmanız"
-        " gerekiyor!"
-    )
 
 # SOL MENÜ - VERİ GİRİŞİ
 with st.sidebar:
@@ -482,25 +445,45 @@ with tab_konu:
     if akilli_uyari_gonder(test_mesaji):
       st.success("Test bildirimi Telegram'a iletildi!")
 
-# 5. DERS PROGRAMI
+# 5. DERS PROGRAMI (RESİM YÜKLEME ÖZELLİĞİ)
 with tab_program:
-  st.header("📅 Haftalık Ders Çalışma Programım")
-  duzenlenmis_program = st.data_editor(
-      df_program, num_rows="fixed", use_container_width=True
-  )
-  if st.button("💾 Programı Kaydet"):
-    duzenlenmis_program.to_csv(PROGRAM_FILE, index=False)
-    st.success("Haftalık ders programınız güncellendi!")
+  st.header("📅 Haftalık Ders Çalışma Programım (Görsel)")
+  st.write("Galerinden ders programı fotoğrafını (PNG/JPG) yükleyebilirsin:")
 
-# 6. SAATLİK HATIRLATICI / BİLDİRİM SİSTEMİ
+  yuklenen_dosya = st.file_uploader(
+      "Ders Programı Görseli Seç", type=["png", "jpg", "jpeg"]
+  )
+
+  if yuklenen_dosya is not None:
+    with open(PROGRAM_IMG_FILE, "wb") as f:
+      f.write(yuklenen_dosya.getbuffer())
+    st.success("Ders programı görseli başarıyla yüklendi!")
+
+  if os.path.exists(PROGRAM_IMG_FILE):
+    st.image(
+        PROGRAM_IMG_FILE,
+        caption="Yüklediğin Ders Programı",
+        use_container_width=True,
+    )
+    if st.button("🗑️ Program Görselini Kaldır"):
+      os.remove(PROGRAM_IMG_FILE)
+      st.rerun()
+  else:
+    st.info(
+        "Henüz bir ders programı görseli yüklenmedi. Yukarıdan dosya seçip"
+        " ekleyebilirsin."
+    )
+
+# 6. SAATLİK HATIRLATICI / BİLDİRİM SİSTEMİ (TARİH VE SAAT EKLENDİ)
 with tab_hatirlatici:
-  st.header("⏰ Saatlik Görev & Ders Hatırlatıcı")
+  st.header("⏰ Tarihli & Saatlik Görev Hatırlatıcı")
   st.write(
-      "Belirli saatlere özel ders veya konu hatırlatıcıları kurun (Kurduğunuz"
-      " an Telegram'a gelecektir):"
+      "İstediğin tarihe ve saate özel hatırlatıcılar kur (Kurduğun an"
+      " Telegram'a gelecektir):"
   )
 
-  col_s1, col_s2, col_s3 = st.columns([2, 4, 2])
+  col_t, col_s1, col_s2, col_s3 = st.columns([2, 2, 4, 2])
+  tarih_input = col_t.date_input("Tarih", value=datetime.today())
   saat_input = col_s1.text_input("Saat (Örn: 16:00)", value="16:00")
   gorev_input = col_s2.text_input(
       "Görev / Ders / Konu", placeholder="Örn: Trigonometri 50 Soru"
@@ -509,6 +492,7 @@ with tab_hatirlatici:
   if col_s3.button("➕ Hatırlatıcı Ekle"):
     if saat_input and gorev_input:
       yeni_h = pd.DataFrame([{
+          "Tarih": str(tarih_input),
           "Saat": saat_input,
           "Görev / Ders": gorev_input,
           "Durum": "Bekliyor",
@@ -517,8 +501,8 @@ with tab_hatirlatici:
       df_hatirlatici.to_csv(REMINDER_FILE, index=False)
 
       tg_mesaj = (
-          f"⏰ **Yeni Hatırlatıcı Kuruldu!**\n\n📌 Saat: {saat_input}\n🎯 Görev:"
-          f" {gorev_input}"
+          f"⏰ **Yeni Hatırlatıcı Kuruldu!**\n\n📅 Tarih:"
+          f" {tarih_input}\n📌 Saat: {saat_input}\n🎯 Görev: {gorev_input}"
       )
       akilli_uyari_gonder(tg_mesaj)
 
