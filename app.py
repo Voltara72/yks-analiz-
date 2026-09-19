@@ -357,10 +357,9 @@ with tab_tyt:
         tyt_df.groupby(["Tarih", "Yayın/Deneme Adı"])["Net"].sum().reset_index()
     )
 
-    # Grafik Türü Seçimi
     grafik_turu = st.radio(
         "TYT İçin Grafik Türü Seçin:",
-        ["Çizgi Grafiği", "Pasta / Dağılım Grafiği (Bar)"],
+        ["Çizgi Grafiği", "Pasta Grafik (Pie)"],
         horizontal=True,
         key="tyt_grafik_tipi",
     )
@@ -376,13 +375,12 @@ with tab_tyt:
           markers=True,
       )
     else:
-      fig = px.bar(
+      fig = px.pie(
           toplam_tyt,
-          x="Yayın/Deneme Adı",
-          y="Net",
-          text="Net",
-          color="Net",
-          title="TYT Yayın Bazlı Net Dağılımı",
+          names="Yayın/Deneme Adı",
+          values="Net",
+          title="TYT Yayın Bazlı Net Dağılımı (Pasta Grafik)",
+          hole=0.3,
       )
     st.plotly_chart(fig, use_container_width=True)
   else:
@@ -397,10 +395,9 @@ with tab_ayt:
         ayt_df.groupby(["Tarih", "Yayın/Deneme Adı"])["Net"].sum().reset_index()
     )
 
-    # Grafik Türü Seçimi
     grafik_turu_ayt = st.radio(
         "AYT İçin Grafik Türü Seçin:",
-        ["Çizgi Grafiği", "Pasta / Dağılım Grafiği (Bar)"],
+        ["Çizgi Grafiği", "Pasta Grafik (Pie)"],
         horizontal=True,
         key="ayt_grafik_tipi",
     )
@@ -416,13 +413,12 @@ with tab_ayt:
           markers=True,
       )
     else:
-      fig_ayt = px.bar(
+      fig_ayt = px.pie(
           toplam_ayt,
-          x="Yayın/Deneme Adı",
-          y="Net",
-          text="Net",
-          color="Net",
-          title="AYT Yayın Bazlı Net Dağılımı",
+          names="Yayın/Deneme Adı",
+          values="Net",
+          title="AYT Yayın Bazlı Net Dağılımı (Pasta Grafik)",
+          hole=0.3,
       )
     st.plotly_chart(fig_ayt, use_container_width=True)
   else:
@@ -438,7 +434,7 @@ with tab_brans:
   if not brans_df.empty:
     grafik_turu_brans = st.radio(
         "Branş İçin Grafik Türü Seçin:",
-        ["Çizgi Grafiği", "Pasta / Dağılım Grafiği (Bar)"],
+        ["Çizgi Grafiği", "Pasta Grafik (Pie)"],
         horizontal=True,
         key="brans_grafik_tipi",
     )
@@ -454,13 +450,12 @@ with tab_brans:
           markers=True,
       )
     else:
-      fig_brans = px.bar(
+      fig_brans = px.pie(
           brans_df,
-          x="Yayın/Deneme Adı",
-          y="Net",
-          color="Kayıt Türü",
-          barmode="group",
-          title=f"{secilen_brans} Yayın Bazlı Net Dağılımı",
+          names="Yayın/Deneme Adı",
+          values="Net",
+          title=f"{secilen_brans} Yayın Bazlı Net Dağılımı (Pasta Grafik)",
+          hole=0.3,
       )
     st.plotly_chart(fig_brans, use_container_width=True)
   else:
@@ -487,14 +482,31 @@ with tab_konu:
       for _, row in kritik_konular.iterrows():
         st.warning(f"👉 {row['Konu']}: Toplam {row['Hata Sayısı']} kez yanlış!")
 
-    fig_hata = px.bar(
-        hata_df.head(15),
-        x="Hata Sayısı",
-        y="Konu",
-        orientation="h",
-        title="En Çok Soru Kaçırılan Konular",
-        color="Hata Sayısı",
+    # Konu Analizi İçin Grafik Seçeneği
+    grafik_turu_konu = st.radio(
+        "Konu Analizi İçin Grafik Türü Seçin:",
+        ["Yatay Sütun Grafiği", "Pasta Grafik (Pie)"],
+        horizontal=True,
+        key="konu_grafik_tipi",
     )
+
+    if grafik_turu_konu == "Yatay Sütun Grafiği":
+      fig_hata = px.bar(
+          hata_df.head(15),
+          x="Hata Sayısı",
+          y="Konu",
+          orientation="h",
+          title="En Çok Soru Kaçırılan Konular",
+          color="Hata Sayısı",
+      )
+    else:
+      fig_hata = px.pie(
+          hata_df.head(10),
+          names="Konu",
+          values="Hata Sayısı",
+          title="En Çok Soru Kaçırılan Konular (Pasta Grafik)",
+          hole=0.3,
+      )
     st.plotly_chart(fig_hata, use_container_width=True)
   else:
     st.info("Henüz konu hatası kaydedilmedi.")
