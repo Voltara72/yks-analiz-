@@ -8,7 +8,7 @@ import streamlit as st
 # ==========================================
 # TELEGRAM BOT VE KULLANICI BİLGİLERİ
 # ==========================================
-TELEGRAM_BOT_TOKEN = "8783937056:AAFtpytdK_hnNRfsRi0DB4V4cOqD0P1EAn0"
+TELEGRAM_BOT_TOKEN = "8783937056:AAEIjrGuQoybPddT7onIshrftA1C6zdHE68"
 TELEGRAM_CHAT_ID = "6250328228"
 
 
