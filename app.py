@@ -5,181 +5,233 @@ import os
 
 st.set_page_config(page_title="YKS Detaylı Analiz Paneli", layout="wide")
 
-# GENİŞLETİLMİŞ VE DERİNLATİLMİŞ KONU LİSTESİ
+# GENİŞLETİLMİŞ VE DERİNLATILMIŞ KONU LİSTESİ
 KONULAR = {
     "Türkçe": [
-        "Sözcükte Anlam & Yorum", "Cümlede Anlam & Yorum", "Paragrafta Ana Fikir & Yardımcı Fikir",
+        "Sözcükte Anlam & Yorum", "Cümlede Anlam & Yorum", "Paragrafta Ana Fikir & Yardımcı Fikirler",
         "Paragrafta Yapı & Anlatım Teknikleri", "Ses Bilgisi", "Yazım Kuralları", "Noktalama İşaretleri",
         "Sözcük Türleri (İsim, Sıfat, Zamir)", "Zarf, Edat, Bağlaç, Ünlem", "Fiiller & Fiilde Çatı",
         "Cümlenin Ögeleri", "Cümle Türleri", "Anlatım Bozuklukları"
     ],
     "Matematik": [
-        "Temel Kavramlar & Sayı Kümeleri", "Bölme & Bölünebilme Rules", "EBOB - EKOK", "Rasyonel & Ondalık Sayılar",
-        "Birinci Dereceden Denklem ve Eşitsizlikler", "Mutlak Değer", "Üslü İfadeler", "Köklü İfadeler",
+        "Temel Kavramlar & Sayı Kümeleri", "Bölme & Bölünebilme Rules", "EBOB - EKOK",
+        "Birinci Dereceden Denklem ve Eşitsizlikler", "Mutlak Değer", "Üslü & Köklü İfadeler",
         "Çarpanlara Ayırma", "Oran - Orantı", "Sayı & Kesir Problemleri", "Yaş Problemleri",
-        "Yüzde, Kar-Zarar & Faiz Problemleri", "Karışım Problemleri", "Hareket / Hız Problemleri",
-        "İşçi & Havuz Problemleri", "Mantar & Rutin Olmayan Problemler", "Kümeler & Kartezyen Çarpım",
+        "Yüzde, Kar-Zarar & Faiz Problemleri", "Karışım Problemleri", "Hareket Problemleri",
+        "İşçi & Havuz Problemleri", "Mantar & Rutin Olmayan Problemler", "Kümeler & Mantık",
         "Mantık", "Fonksiyonlar (Temel & Grafikler)", "Polinomlar", "İkinci Dereceden Denklemler",
-        "Karmaşık Sayılar", "Parabol", "Eşitsizlikler", "Permütasyon & Kombinasyon", "Olasılık & Binom",
-        "Logaritma", "Diziler & Seriler", "Limit & Süreklilik", "Türev & Uygulamaları", "İntegral & Alan Hesabı"
+        "Karmaşık Sayılar", "Parabol", "Eşitsizlikler", "Permütasyon & Kombinasyon", "Olasılık",
+        "Logaritma", "Diziler & Seriler", "Limit & Süreklilik", "Türev & Uygulamaları", "İntegral & Alan"
     ],
     "Geometri": [
-        "Doğroda ve Üçgende Açılar", "Özel Üçgenler (Dik, İkizkenar, Eşkenar)", "Üçgende Alan & Açıortay/Kenarortay",
-        "Üçgende Benzerlik", "Çokgenler & Dörtgenler", "Paralelkenar & Eşkenar Dörtgen", "Dikdörtgen & Kare",
-        "Yamuk & Deltoid", "Çemberde Açı ve Uzunluk", "Dairede Çevre ve Alan", "Analitik Geometri (Nokta & Doğru)",
-        "Dönüşüm Geometrisi", "Katı Cisimler (Prizma, Piramit, Silindir, Koni, Küre)", "Çemberin Analitiği"
+        "Doğruda & Üçgende Açılar", "Özel Üçgenler (Dik, İkizkenar, Eşkenar)", "Üçgende Alan & Açıortay/Kenarortay",
+        "Üçgende Benzerlik", "Çokgenler & Dörtgenler", "Yamuk & Paralelkenar", "Eşkenar Dörtgen & Deltoid",
+        "Dikdörtgen & Kare", "Çemberde Açı & Uzunluk", "Dairede Çevre ve Alan", "Analitik Geometri",
+        "Katı Cisimler (Prizma, Piramit, Küre)", "Çemberin Analitiği"
     ],
     "Fizik": [
-        "Fizik Bilimine Giriş", "Madde ve Özellikleri", "Sıvıların Kaldırma Kuvveti", "Basınç",
-        "Isı, Sıcaklık ve Genleşme", "Vektörler & Bağıl Hareket", "Newton'un Hareket Yasaları", "Bir Boyutta Sabit İvmeli Hareket",
-        "Atışlar", "İş, Güç ve Enerji", "İtme ve Momentum", "Tork & Denge & Kütle Merkezi",
-        "Basit Makineler", "Elektrostatik & Elektrik Alan/Potansiyel", "Elektrik Akımı & Direnç/Devreler",
-        "Manyetizma & İndüksiyon", "Alternatif Akım & Transformatörler", "Düzgün Çemberel Hareket",
-        "Basit Harmonik Hareket", "Dalga Mekaniği & Su/Ses/Işık Dalgaları", "Optik (Gölge, Yansıma, Kırılma, Mercekler)",
-        "Aydınlanma & Renk", "Atom Fizigi & Radyoaktivite", "Modern Fizik & Photoelektrik/Compton", "Modern Fizigin Teknolojideki Uygulamaları"
+        "Fizik Bilimine Giriş & Madde Özellikleri", "Vektörler & Tork / Denge", "Kütle Merkezi & Basit Makineler",
+        "Hareket & Dinamik (Newton Laws)", "İş, Güç ve Enerji", "Atışlar", "İtme ve Momentum",
+        "Basınç & Kaldırma Kuvveti", "Isı, Sıcaklık & Genleşme", "Elektrostatik & Elektrik Akımı",
+        "Mıknatıs & Manyetizma", "Alternatif Akım & Transformatörler", "Çembersel Hareket & Kepler",
+        "Basit Harmonik Hareket", "Dalgalar & Optik", "Atom Fizigi & Radyoaktivite", "Modern Fizik & Teknolojik Uygulamalar"
     ],
     "Kimya": [
-        "Kimya Bilimi & Güvenlik", "Atomun Yapısı ve Periyodik Sistem", "Kimyasal Türler Arası Etkileşimler",
-        "Maddenin Halleri (Gazlar, Sıvılar, Katılar)", "Doğa ve Kimya", "Kimyasal Hesaplamalar & Mol Kavramı",
-        "Asitler, Bazlar ve Tuzlar", "Karışımlar & Ayırma Yöntemleri", "Kimya Her Yerde",
-        "Sıvı Çözeltiler ve Çözünürlük", "Kimyasal Tepkimelerde Enerji", "Kimyasal Tepkimelerde Hız",
-        "Kimyasal Denge & Sulu Çözelti Dengeleri", "Kimya ve Elektrik (Piller & Elektroliz)",
-        "Karbon Kimyasına Giriş", "Organik Kimya (Hidrokarbonlar & Fonksiyonel Gruplar)"
+        "Kimya Bilimi & Atomun Yapısı", "Periyodik Sistem", "Kimyasal Türler Arası Etkileşimler",
+        "Maddenin Halleri & Gazlar", "Mol Kavramı & Kimyasal Hesaplamalar", "Çözeltiler & Çözünürlük",
+        "Kimya ve Enerji (Tepkime Isısı)", "Tepkime Hızları & Kimyasal Denge", "Asitler, Bazlar ve Tuzlar",
+        "Çözünürlük Dengesi (KÇÇ)", "Kimya ve Elektrik (Piller & Elektroliz)", "Organik Kimyaya Giriş & Hibritleşme",
+        "Hidrokarbonlar & Fonksiyonel Gruplar"
     ],
     "Biyoloji": [
-        "Yaşam Bilimi Biyoloji & Canlıların Bileşikleri", "Hücre Yapısı, Organeller ve Hücre Zarı", "Canlıların Sınıflandırılması",
-        "Hücre Bölünmeleri (Mitoz & Mayoz)", "Eşeysiz ve Eşeyli Üreme", "Kalıtım Genel İlkeleri",
-        "Ekosistem Ekolojisi & Güncel Çevre Sorunları", "İnsan Fizyolojisi (Denetleyici/Düzenleyici Sistemler)",
-        "Destek ve Hareket Sistemi", "Sindirim Sistemi", "Dolaşım ve Bağışıklık Sistemi",
-        "Solunum Sistemi", "Boşaltım Sistemi (Üriner Sistem)", "Göz, Kulak vb. Duyu Organları",
-        "Bitki Biyolojisi (Yapı, Beslenme, Taşıma, Üreme)", "Nükleik Asitler & Protein Sentezi",
-        "Canlılarda Enerji Dönüşümleri (Fotosentez, Kemosentez, Hücresel Solunum)", "Canlılar ve Çevre / Biyoteknoloji"
+        "Yaşam Bilimi Biyoloji & Hücre", "Canlıların Sınıflandırılması", "Hücre Bölünmeleri & Üreme",
+        "Kalıtım & Ekosistem Ekolojisi", "Hücresel Solunum & Fotosentez/Kemosentez", "İnsan Fizyolojisi (Sistemler)",
+        "Nükleik Asitler & Protein Sentezi", "Biyoteknoloji & Gen Mühendisliği"
     ],
-    "Edebiyat & Sosyal": [
-        "Güzel Sanatlar ve Edebiyat", "Metinlerin Sınıflandırılması", "Şiir Bilgisi & Edebi Sanatlar",
-        "İslamiyet Öncesi & Geçiş Dönemi Türk Edebiyatı", "Halk Edebiyatı", "Divan Edebiyatı",
-        "Tanzimat Edebiyatı", "Servet-i Fünun & Fecr-i Ati", "Milli Edebiyat", "Cumhuriyet Dönemi Türk Edebiyatı",
-        "Tarih Bilimi & İlk Çağ Uygarlıkları", "Türk-İslam Tarihi", "Osmanlı Tarihi (Kuruluş, Yükselme, Duraklama, Dağılma)",
-        "İnkılap Tarihi & Atatürkçülük", "Coğrafya: Harita Bilgisi & İklim Şekilleri", "Coğrafya: Türkiye'nin Yerşekilleri & Nüfusu",
-        "Felsefe: Bilgi, Varlık, Ahlak, Din Felsefesi", "Din Kültürü ve Ahlak Bilgisi"
+    "Tarih": [
+        "Tarih Bilimi & İlk Çağ Uygarlıkları", "İslam Öncesi & İslam Tarihi", "İlk Türk-İslam Devletleri",
+        "Osmanlı Devleti Kuruluş & Yükselme", "Osmanlı Kültür ve Medeniyeti", "20. Yüzyıl Başlarında Osmanlı",
+        "Milli Mücadele Dönemi & İnkılaplar", "Atatürkçülük & Çağdaş Türk ve Dünya Tarihi"
+    ],
+    "Coğrafya": [
+        "Doğa ve İnsan & Harita Bilgisi", "Dünyanın Şekli ve Hareketleri", "Coğrafi Konum & İklim Bilgisi",
+        "Yerin Şekillenmesi (İç & Dış Kuvvetler)", "Nüfus ve Yerleşme", "Türkiye'nin Fiziki & Beşeri Özellikleri",
+        "Küresel Ortam: Bölgeler ve Ülkeler", "Çevre ve Toplum"
+    ],
+    "Felsefe & Din": [
+        "Felsefeyi Tanıma & Bilgi Felsefesi", "Varlık & Ahlak Felsefesi", "Sanat, Din & Siyaset Felsefesi",
+        "15.-17. Yüzyıl Felsefesi & Modern Düşünce", "Kur'an-ı Kerim ve Temel Kavramlar", "Hz. Muhammed'in Hayatı & Ahlakı",
+        "İslam Düşüncesinde Yorumlar & Mezhepler"
     ]
 }
 
-DATA_DENEME = "deneme_toplam.csv"
-DATA_KONU = "konu_eksikleri.csv"
+DATA_FILE = "deneme_verileri.csv"
 
-if os.path.exists(DATA_DENEME):
-    df_deneme = pd.read_csv(DATA_DENEME)
-else:
-    df_deneme = pd.DataFrame(columns=["Tarih", "Deneme Adı", "Sınav Türü", "Türkçe Net", "Matematik Net", "Fen Net", "Sosyal Net", "Toplam Net"])
+def verileri_yukle():
+    if os.path.exists(DATA_FILE):
+        return pd.read_csv(DATA_FILE)
+    return pd.DataFrame(columns=["Tarih", "Yayın/Deneme Adı", "Kayıt Türü", "Ders", "Doğru", "Yanlış", "Net", "Hatalı Konular"])
 
-if os.path.exists(DATA_KONU):
-    df_konu = pd.read_csv(DATA_KONU)
-else:
-    df_konu = pd.DataFrame(columns=["Tarih", "Deneme Adı", "Ders", "Konu", "Doğru", "Yanlış", "Boş", "Net"])
+def veri_kaydet(df):
+    df.to_csv(DATA_FILE, index=False)
 
-st.title("📊 YKS Gelişmiş Genel & Branş Deneme Analizi")
+df_veriler = verileri_yukle()
 
-st.sidebar.header("📝 Deneme / Branş Kaydı")
-deneme_adi = st.sidebar.text_input("Deneme / Yayın Adı", "Özdebir 1")
-sinav_turu = st.sidebar.radio("Kayıt Türü Seçin", ["Genel TYT/AYT Denemesi", "Tek Branş Denemesi"])
+st.title("🎓 YKS Detaylı Analiz & Deneme Takip Paneli")
 
-if sinav_turu == "Genel TYT/AYT Denemesi":
-    st.sidebar.subheader("📚 Toplu Ders Netleri")
+# SOL MENÜ - VERİ GİRİŞİ
+with st.sidebar:
+    st.header("📝 Yeni Deneme Ekle")
+    tarih = st.date_input("Deneme Tarihi")
+    yayin = st.text_input("Yayın / Deneme Adı", placeholder="Örn: 3D Türkiye Geneli 1")
     
-    col_t, col_m = st.sidebar.columns(2)
-    turkce_net = col_t.number_input("Türkçe Net", min_value=0.0, max_value=40.0, value=20.0, step=0.25)
-    mat_net = col_m.number_input("Matematik Net", min_value=0.0, max_value=40.0, value=18.0, step=0.25)
+    # AYRILMIŞ TYT / AYT SEÇİM EKRANI
+    kayit_turu = st.radio("Kayıt Türü Seçin", ["Genel TYT Denemesi", "Genel AYT Denemesi", "Tek Branş Denemesi"])
     
-    col_f, col_s = st.sidebar.columns(2)
-    fen_net = col_f.number_input("Fen Net", min_value=0.0, max_value=40.0, value=10.0, step=0.25)
-    sosyal_net = col_s.number_input("Sosyal Net", min_value=0.0, max_value=40.0, value=12.0, step=0.25)
+    yeni_kayitlar = []
     
-    toplam_net = turkce_net + mat_net + fen_net + sosyal_net
-    st.sidebar.success(f"🎯 **Hesaplanan Toplam Net: {toplam_net:.2f}**")
-    
-    if st.sidebar.button("💾 Genel Denemeyi Kaydet"):
-        tarih = pd.Timestamp.now().strftime("%Y-%m-%d")
-        yeni_deneme = pd.DataFrame([{
-            "Tarih": tarih,
-            "Deneme Adı": deneme_adi,
-            "Sınav Türü": "Genel Sınav",
-            "Türkçe Net": turkce_net,
-            "Matematik Net": mat_net,
-            "Fen Net": fen_net,
-            "Sosyal Net": sosyal_net,
-            "Toplam Net": toplam_net
-        }])
-        df_deneme = pd.concat([df_deneme, yeni_deneme], ignore_index=True)
-        df_deneme.to_csv(DATA_DENEME, index=False)
-        st.sidebar.success("Genel deneme netlerin kaydedildi!")
-        st.rerun()
+    if kayit_turu == "Genel TYT Denemesi":
+        st.subheader("📚 Toplu TYT Netleri")
+        tyt_dersler = ["Türkçe", "Matematik", "Geometri", "Fizik", "Kimya", "Biyoloji", "Tarih", "Coğrafya", "Felsefe & Din"]
+        
+        for ders in tyt_dersler:
+            with st.expander(f"📌 {ders}"):
+                c1, c2 = st.columns(2)
+                d = c1.number_input(f"{ders} D", min_value=0, max_value=40, value=0, key=f"d_{ders}")
+                y = c2.number_input(f"{ders} Y", min_value=0, max_value=40, value=0, key=f"y_{ders}")
+                net = d - (y * 0.25)
+                
+                konular = KONULAR.get(ders, [])
+                hatalar = st.multiselect(f"{ders} Eksik Konular", konular, key=f"h_{ders}")
+                
+                if d > 0 or y > 0:
+                    yeni_kayitlar.append({
+                        "Tarih": tarih, "Yayın/Deneme Adı": yayin, "Kayıt Türü": "Genel TYT Denemesi",
+                        "Ders": ders, "Doğru": d, "Yanlış": y, "Net": net, "Hatalı Konular": ", ".join(hatalar)
+                    })
 
-else:
-    st.sidebar.subheader("🎯 Branş & Konu Detay Analizi")
-    secilen_ders = st.sidebar.selectbox("Ders Seçin", list(KONULAR.keys()))
-    secilen_konu = st.sidebar.selectbox(f"📌 {secilen_ders} Detaylı Konu Başlığı", KONULAR[secilen_ders])
-    
-    col_d, col_y, col_b = st.sidebar.columns(3)
-    b_dogru = col_d.number_input("Doğru", min_value=0, max_value=40, value=1)
-    b_yanlis = col_y.number_input("Yanlış", min_value=0, max_value=40, value=0)
-    b_bos = col_b.number_input("Boş", min_value=0, max_value=40, value=0)
-    
-    b_net = b_dogru - (b_yanlis * 0.25)
-    st.sidebar.info(f"Konu Netiniz: **{b_net:.2f}**")
-    
-    if st.sidebar.button("💾 Branş/Konu Verisini Kaydet"):
-        tarih = pd.Timestamp.now().strftime("%Y-%m-%d")
-        yeni_konu = pd.DataFrame([{
-            "Tarih": tarih,
-            "Deneme Adı": deneme_adi,
-            "Ders": secilen_ders,
-            "Konu": secilen_konu,
-            "Doğru": b_dogru,
-            "Yanlış": b_yanlis,
-            "Boş": b_bos,
-            "Net": b_net
-        }])
-        df_konu = pd.concat([df_konu, yeni_konu], ignore_index=True)
-        df_konu.to_csv(DATA_KONU, index=False)
-        st.sidebar.success("Branş konu analizi kaydedildi!")
-        st.rerun()
+    elif kayit_turu == "Genel AYT Denemesi":
+        st.subheader("📚 Toplu AYT Netleri")
+        ayt_dersler = ["Matematik", "Geometri", "Fizik", "Kimya", "Biyoloji", "Tarih", "Coğrafya", "Felsefe & Din"]
+        
+        for ders in ayt_dersler:
+            with st.expander(f"📌 AYT {ders}"):
+                c1, c2 = st.columns(2)
+                d = c1.number_input(f"AYT {ders} D", min_value=0, max_value=40, value=0, key=f"d_ayt_{ders}")
+                y = c2.number_input(f"AYT {ders} Y", min_value=0, max_value=40, value=0, key=f"y_ayt_{ders}")
+                net = d - (y * 0.25)
+                
+                konular = KONULAR.get(ders, [])
+                hatalar = st.multiselect(f"AYT {ders} Eksik Konular", konular, key=f"h_ayt_{ders}")
+                
+                if d > 0 or y > 0:
+                    yeni_kayitlar.append({
+                        "Tarih": tarih, "Yayın/Deneme Adı": yayin, "Kayıt Türü": "Genel AYT Denemesi",
+                        "Ders": ders, "Doğru": d, "Yanlış": y, "Net": net, "Hatalı Konular": ", ".join(hatalar)
+                    })
 
-# ANA SAYFA / SEKMELER
-tab1, tab2, tab3 = st.tabs(["📈 Genel Deneme Net Trendi", "🎯 Branş & Detaylı Konu Analizi", "📋 Tüm Veriler"])
-
-with tab1:
-    if not df_deneme.empty:
-        st.subheader("📊 Genel Denemeler Net Gelişimi")
-        fig = px.bar(
-            df_deneme, 
-            x="Deneme Adı", 
-            y=["Türkçe Net", "Matematik Net", "Fen Net", "Sosyal Net"],
-            title="Genel Deneme Netleri (Ders Kırılımlı)",
-            barmode="stack"
-        )
-        st.plotly_chart(fig, use_container_width=True)
-        st.dataframe(df_deneme, use_container_width=True)
     else:
-        st.info("Henüz genel deneme kaydı yapılmadı.")
+        st.subheader("🎯 Tek Branş Denemesi")
+        secilen_ders = st.selectbox("Ders Seçin", list(KONULAR.keys()))
+        c1, c2 = st.columns(2)
+        d = c1.number_input("Doğru", min_value=0, max_value=40, value=0)
+        y = c2.number_input("Yanlış", min_value=0, max_value=40, value=0)
+        net = d - (y * 0.25)
+        
+        hatalar = st.multiselect("Eksik Konular", KONULAR[secilen_ders])
+        
+        if d > 0 or y > 0:
+            yeni_kayitlar.append({
+                "Tarih": tarih, "Yayın/Deneme Adı": yayin, "Kayıt Türü": "Tek Branş Denemesi",
+                "Ders": secilen_ders, "Doğru": d, "Yanlış": y, "Net": net, "Hatalı Konular": ", ".join(hatalar)
+            })
 
-with tab2:
-    if not df_konu.empty:
-        st.subheader("⚠️ Konu Bazlı Doğru, Yanlış ve Boş Dağılımı")
-        fig_konu = px.bar(
-            df_konu, 
-            x="Konu", 
-            y=["Doğru", "Yanlış", "Boş"], 
-            color_discrete_sequence=["#2CA02C", "#D62728", "#FF7F0E"],
-            title="Konulara Göre Soru Başarısı",
-            barmode="group",
-            facet_col="Ders"
-        )
-        st.plotly_chart(fig_konu, use_container_width=True)
-        st.dataframe(df_konu, use_container_width=True)
-    else:
-        st.info("Henüz branş/konu kaydı yapılmadı.")
+    if st.button("💾 Kaydet"):
+        if yayin and yeni_kayitlar:
+            yeni_df = pd.DataFrame(yeni_kayitlar)
+            df_veriler = pd.concat([df_veriler, yeni_df], ignore_index=True)
+            veri_kaydet(df_veriler)
+            st.success("Deneme başarıyla kaydedildi!")
+            st.rerun()
+        else:
+            st.warning("Lütfen yayın adını girin ve en az bir ders neti ekleyin.")
 
-with tab3:
-    st.write("### Genel Deneme Kayıtları", df_deneme)
-    st.write("### Branş & Konu Kayıtları", df_konu)
+# ANA EKRAN - SEKME BAZLI DETAYLI ANALİZ
+if not df_veriler.empty:
+    tab_tyt, tab_ayt, tab_brans, tab_konu, tab_veri = st.tabs([
+        "📊 TYT Analizi", "📈 AYT Analizi", "🎯 Branş Analizi", "⚠️ Konu Analizi", "📋 Tüm Veriler"
+    ])
+
+    with tab_tyt:
+        st.header("📊 Genel TYT Deneme Analizi")
+        tyt_df = df_veriler[df_veriler["Kayıt Türü"] == "Genel TYT Denemesi"]
+        
+        if not tyt_df.empty:
+            toplam_tyt = tyt_df.groupby(["Tarih", "Yayın/Deneme Adı"])["Net"].sum().reset_index()
+            fig = px.line(toplam_tyt, x="Tarih", y="Net", text="Net", hover_data=["Yayın/Deneme Adı"],
+                          title="TYT Toplam Net Gelişimi", markers=True)
+            fig.update_traces(textposition="top center")
+            st.plotly_chart(fig, use_container_width=True)
+            
+            st.subheader("Ders Bazlı TYT Ortalamaları")
+            ders_ort = tyt_df.groupby("Ders")["Net"].mean().reset_index()
+            st.bar_chart(ders_ort.set_index("Ders"))
+        else:
+            st.info("Henüz kaydedilmiş Genel TYT Denemesi bulunamadı.")
+
+    with tab_ayt:
+        st.header("📈 Genel AYT Deneme Analizi")
+        ayt_df = df_veriler[df_veriler["Kayıt Türü"] == "Genel AYT Denemesi"]
+        
+        if not ayt_df.empty:
+            toplam_ayt = ayt_df.groupby(["Tarih", "Yayın/Deneme Adı"])["Net"].sum().reset_index()
+            fig_ayt = px.line(toplam_ayt, x="Tarih", y="Net", text="Net", hover_data=["Yayın/Deneme Adı"],
+                              title="AYT Toplam Net Gelişimi", markers=True)
+            fig_ayt.update_traces(textposition="top center")
+            st.plotly_chart(fig_ayt, use_container_width=True)
+            
+            st.subheader("Ders Bazlı AYT Ortalamaları")
+            ders_ort_ayt = ayt_df.groupby("Ders")["Net"].mean().reset_index()
+            st.bar_chart(ders_ort_ayt.set_index("Ders"))
+        else:
+            st.info("Henüz kaydedilmiş Genel AYT Denemesi bulunamadı.")
+
+    with tab_brans:
+        st.header("🎯 Branş Bazlı İlerleme")
+        secilen_brans = st.selectbox("Analiz Edilecek Dersi Seçin", list(KONULAR.keys()))
+        brans_df = df_veriler[df_veriler["Ders"] == secilen_brans]
+        
+        if not brans_df.empty:
+            fig_brans = px.line(brans_df, x="Tarih", y="Net", color="Kayıt Türü",
+                                hover_data=["Yayın/Deneme Adı"], title=f"{secilen_brans} Net Gelişimi", markers=True)
+            st.plotly_chart(fig_brans, use_container_width=True)
+        else:
+            st.info(f"{secilen_brans} dersine ait kayıt bulunamadı.")
+
+    with tab_konu:
+        st.header("⚠️ En Çok Hata Yapılan Konular")
+        tum_hatalar = []
+        for hatalar in df_veriler["Hatalı Konular"].dropna():
+            if hatalar:
+                tum_hatalar.extend([h.strip() for h in hatalar.split(",") if h.strip()])
+        
+        if tum_hatalar:
+            hata_df = pd.Series(tum_hatalar).value_counts().reset_index()
+            hata_df.columns = ["Konu", "Hata Sayısı"]
+            fig_hata = px.bar(hata_df.head(15), x="Hata Sayısı", y="Konu", orientation="h",
+                              title="En Sık Soru Kaçırılan 15 Konu", color="Hata Sayısı")
+            st.plotly_chart(fig_hata, use_container_width=True)
+        else:
+            st.info("Henüz konu hatası kaydedilmedi.")
+
+    with tab_veri:
+        st.header("📋 Tüm Kayıtlar")
+        st.dataframe(df_veriler, use_container_width=True)
+        
+        if st.button("🗑️ Tüm Verileri Sıfırla"):
+            if os.path.exists(DATA_FILE):
+                os.remove(DATA_FILE)
+                st.success("Tüm veriler silindi!")
+                st.rerun()
+else:
+    st.info("Henüz hiç deneme kaydı eklenmedi. Sol taraftaki menüden ilk denemenizi ekleyebilirsiniz.")
