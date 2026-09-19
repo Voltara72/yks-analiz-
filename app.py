@@ -26,7 +26,7 @@ def akilli_uyari_gonder(mesaj: str) -> bool:
 
 st.set_page_config(page_title="YKS Detaylı Analiz & Koçluk Paneli", layout="wide")
 
-# KONU LİSTESİ (Geometri buraya eklendi!)
+# KONU LİSTESİ
 KONULAR = {
     "Türkçe": [
         "Sözcükte Anlam & Yorum",
@@ -54,7 +54,7 @@ KONULAR = {
         "Oran - Orantı",
         "Sayı & Kesir Problemleri",
         "Yaş Problemleri",
-        "Yüzde, Kar-Zarار & Faiz Problemleri",
+        "Yüzde, Kar-Zarar & Faiz Problemleri",
         "Karışım Problemleri",
         "Hareket Problemleri",
         "İşçi & Havuz Problemleri",
@@ -301,7 +301,15 @@ with st.sidebar:
     d = c1.number_input("Doğru", min_value=0, max_value=40, value=0)
     y = c2.number_input("Yanlış", min_value=0, max_value=40, value=0)
     net = d - (y * 0.25)
-    hatalar = st.multiselect("Eksik Konular", KONULAR[secilen_ders])
+
+    # Matematik seçilirse Geometri konuları da listeye dahil edilsin
+    secilen_konular_listesi = KONULAR[secilen_ders]
+    if secilen_ders == "Matematik":
+      secilen_konular_listesi = (
+          KONULAR["Matematik"] + KONULAR["Geometri"]
+      )  # Matematik + Geometri birleşti
+
+    hatalar = st.multiselect("Eksik Konular", secilen_konular_listesi)
     if d > 0 or y > 0:
       yeni_kayitlar.append({
           "Tarih": tarih,
