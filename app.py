@@ -20,7 +20,7 @@ KONULAR = {
         "Yüzde, Kar-Zarar & Faiz Problemleri", "Karışım Problemleri", "Hareket Problemleri",
         "İşçi & Havuz Problemleri", "Mantar & Rutin Olmayan Problemler", "Kümeler & Mantık",
         "Mantık", "Fonksiyonlar (Temel & Grafikler)", "Polinomlar", "İkinci Dereceden Denklemler",
-        "Karmaşık Sayılar", "Parabol", "Eşitsizlikler", "Permütasyon & Kombinasyon", "Olasılık",
+        "Karmaşık Sayılar", "Parabol", "Eşitsizlikler", "Trigonometri", "Permütasyon & Kombinasyon", "Olasılık",
         "Logaritma", "Diziler & Seriler", "Limit & Süreklilik", "Türev & Uygulamaları", "İntegral & Alan"
     ],
     "Geometri": [
