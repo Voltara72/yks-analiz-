@@ -359,7 +359,6 @@ with st.sidebar:
       df_veriler = pd.concat([df_veriler, yeni_df], ignore_index=True)
       df_veriler.to_csv(DATA_FILE, index=False)
 
-      # Telegram bildirimi tetikle
       toplam_eklenen_net = sum([item["Net"] for item in yeni_kayitlar])
       telegram_mesaj = (
           f"📊 *Yeni Deneme Kaydedildi!*\n\n"
@@ -482,7 +481,6 @@ with tab_konu:
   else:
     st.info("Henüz konu hatası kaydedilmedi.")
 
-  # Telegram'a Test / Akıllı Uyarı Gönderme Butonu
   if st.button("📲 Telegram'a Test Uyarı Gönder"):
     test_mesaji = (
         "⚠️ *AKILLI KOÇ UYARISI*\n\n"
@@ -507,7 +505,10 @@ with tab_program:
 # 6. SAATLİK HATIRLATICI / BİLDİRİM SİSTEMİ
 with tab_hatirlatici:
   st.header("⏰ Saatlik Görev & Ders Hatırlatıcı")
-  st.write("Belirli saatlere özel ders veya konu hatırlatıcıları kurun:")
+  st.write(
+      "Belirli saatlere özel ders veya konu hatırlatıcıları kurun (Kurduğunuz"
+      " an Telegram'a gelecektir):"
+  )
 
   col_s1, col_s2, col_s3 = st.columns([2, 4, 2])
   saat_input = col_s1.text_input("Saat (Örn: 16:00)", value="16:00")
@@ -524,7 +525,16 @@ with tab_hatirlatici:
       }])
       df_hatirlatici = pd.concat([df_hatirlatici, yeni_h], ignore_index=True)
       df_hatirlatici.to_csv(REMINDER_FILE, index=False)
-      st.success("Hatırlatıcı eklendi!")
+
+      # Telegram'a anında bildirim gönderen kısım
+      tg_mesaj = (
+          f"⏰ *Yeni Hatırlatıcı Kuruldu!*\n\n"
+          f"📌 *Saat:* {saat_input}\n"
+          f"🎯 *Görev:* {gorev_input}"
+      )
+      akilli_uyari_gonder(tg_mesaj)
+
+      st.success("Hatırlatıcı eklendi ve Telegram'a bildirildi!")
       st.rerun()
 
   st.subheader("📋 Ekli Hatırlatıcılar")
