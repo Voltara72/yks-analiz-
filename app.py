@@ -26,7 +26,7 @@ def akilli_uyari_gonder(mesaj: str) -> bool:
 
 st.set_page_config(page_title="YKS Detaylı Analiz & Koçluk Paneli", layout="wide")
 
-# KONU LİSTESİ
+# KONU LİSTESİ (Geometri buraya eklendi!)
 KONULAR = {
     "Türkçe": [
         "Sözcükte Anlam & Yorum",
@@ -54,7 +54,7 @@ KONULAR = {
         "Oran - Orantı",
         "Sayı & Kesir Problemleri",
         "Yaş Problemleri",
-        "Yüzde, Kar-Zarar & Faiz Problemleri",
+        "Yüzde, Kar-Zarار & Faiz Problemleri",
         "Karışım Problemleri",
         "Hareket Problemleri",
         "İşçi & Havuz Problemleri",
@@ -403,6 +403,8 @@ with tab_brans:
         markers=True,
     )
     st.plotly_chart(fig_brans, use_container_width=True)
+  else:
+    st.info(f"Henüz {secilen_brans} branşına ait veri girilmedi.")
 
 # 4. AKILLI UYARI VE KONU ANALİZİ
 with tab_konu:
@@ -445,7 +447,7 @@ with tab_konu:
     if akilli_uyari_gonder(test_mesaji):
       st.success("Test bildirimi Telegram'a iletildi!")
 
-# 5. DERS PROGRAMI (RESİM YÜKLEME ÖZELLİĞİ)
+# 5. DERS PROGRAMI (RESİM YÜKLEME)
 with tab_program:
   st.header("📅 Haftalık Ders Çalışma Programım (Görsel)")
   st.write("Galerinden ders programı fotoğrafını (PNG/JPG) yükleyebilirsin:")
@@ -474,7 +476,7 @@ with tab_program:
         " ekleyebilirsin."
     )
 
-# 6. SAATLİK HATIRLATICI / BİLDİRİM SİSTEMİ (TARİH VE SAAT EKLENDİ)
+# 6. SAATLİK HATIRLATICI / BİLDİRİM SİSTEMİ
 with tab_hatirlatici:
   st.header("⏰ Tarihli & Saatlik Görev Hatırlatıcı")
   st.write(
