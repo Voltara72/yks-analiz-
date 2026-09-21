@@ -5,6 +5,7 @@ import plotly.express as px
 import requests
 import streamlit as st
 from supabase import create_client, Client
+from PIL import Image
 
 # ==========================================
 # 1. SUPABASE VE TELEGRAM BİLGİLERİ
@@ -140,12 +141,23 @@ def login_user(username, password):
     except Exception as e:
         return False, None
 
-def get_denemeler(user_id):
+def get_denemeler(user_id=None):
     try:
-        res = supabase.table("denemeler").select("*").eq("user_id", user_id).execute()
+        if user_id:
+            res = supabase.table("denemeler").select("*").eq("user_id", user_id).execute()
+        else:
+            res = supabase.table("denemeler").select("*").execute()
         return pd.DataFrame(res.data) if res.data else pd.DataFrame()
     except Exception as e:
         st.error(f"Denemeler çekilemedi: {e}")
+        return pd.DataFrame()
+
+def get_all_users():
+    try:
+        res = supabase.table("users").select("id, username").execute()
+        return pd.DataFrame(res.data) if res.data else pd.DataFrame()
+    except Exception as e:
+        st.error(f"Kullanıcılar çekilemedi: {e}")
         return pd.DataFrame()
 
 def get_hatirlaticilar(user_id):
@@ -202,7 +214,13 @@ if not st.session_state["logged_in"]:
 user_id = st.session_state["user_info"]["id"]
 username = st.session_state["user_info"]["username"]
 
+# YÖNETİCİ KONTROLÜ ("Ev" hesabı özel yetkilidir)
+IS_ADMIN = (username.strip().lower() == "ev")
+
 st.sidebar.title(f"👤 Hoş geldin, {username}!")
+if IS_ADMIN:
+    st.sidebar.success("👑 Yönetici Yetkisi Aktif")
+
 if st.sidebar.button("Çıkış Yap"):
     st.session_state["logged_in"] = False
     st.session_state["user_info"] = None
@@ -210,20 +228,26 @@ if st.sidebar.button("Çıkış Yap"):
 
 st.title("📈 YKS Detaylı Analiz & Takip Sistemi")
 
-tabs = st.tabs([
+# SEKME BİLEŞENİ (Sadece "Ev" hesabı için Admin sekmesi dâhil edilir)
+tab_titles = [
     "📝 Deneme Ekle & Yönet", 
     "📊 Genel Net Grafikleri", 
     "⚠️ Konu Analizi & Akıllı Uyarı", 
     "🔔 Hatırlatıcılar & Bildirim"
-])
+]
+
+if IS_ADMIN:
+    tab_titles.append("👑 Yönetici (Admin) Paneli")
+
+tabs = st.tabs(tab_titles)
 
 # ------------------------------------------
-# TAB 1: DENEME EKLE, DÜZENLE & SİL
+# TAB 1: DENEME EKLE, DÜZENLE & SİL + RESİM YÜKLEME
 # ------------------------------------------
 with tabs[0]:
     st.header("📝 Deneme Kaydı ve Yönetimi")
     
-    sub_tab1, sub_tab2 = st.tabs(["➕ Yeni Deneme Ekle", "⚙️ Denemeleri Düzenle & Sil"])
+    sub_tab1, sub_tab2, sub_tab3 = st.tabs(["➕ Yeni Deneme Ekle", "⚙️ Denemeleri Düzenle & Sil", "🖼️ Sınav Görseli / Karne Yükle"])
     
     with sub_tab1:
         st.subheader("Yeni Deneme Sınavı Ekle")
@@ -451,6 +475,15 @@ with tabs[0]:
                     except Exception as e:
                         st.error(f"Silme hatası: {e}")
 
+    with sub_tab3:
+        st.subheader("📸 Sınav Karnesi veya Soru Fotoğrafı Yükle")
+        uploaded_file = st.file_uploader("Bir Resim / Görsel Seçin (PNG, JPG, JPEG)", type=["png", "jpg", "jpeg"], key="img_uploader")
+        
+        if uploaded_file is not None:
+            image = Image.open(uploaded_file)
+            st.image(image, caption="Yüklenen Görsel Önizleme", use_container_width=True)
+            st.success("Görsel başarıyla panelye yüklendi!")
+
 # ------------------------------------------
 # TAB 2: GENEL NET GRAFİKLERİ
 # ------------------------------------------
@@ -481,7 +514,7 @@ with tabs[1]:
             st.warning("Seçilen filtrelerde deneme bulunamadı.")
 
 # ------------------------------------------
-# TAB 3: KONU ANALİZİ & DERS DERS AKILLI UYARI (GÜNCELLENDİ)
+# TAB 3: KONU ANALİZİ, PASTA GRAFİĞİ & DERS DERS AKILLI UYARI
 # ------------------------------------------
 with tabs[2]:
     st.header("⚠️ Konu Analizi & Ders Ders Akıllı Uyarı")
@@ -492,18 +525,15 @@ with tabs[2]:
     else:
         secilen_analiz_dersi = st.selectbox("Analiz Etmek İstediğiniz Dersi Seçin", ["Tüm Dersler"] + DERS_LISTESI, key="konu_analiz_ders_select")
         
-        # Filtreleme mantığı
         if secilen_analiz_dersi == "Tüm Dersler":
             df_konu = df_denemeler
         else:
-            # Büyük/küçük harf veya boşluk uyumsuzluğuna karşı esnek ders filtreleme
             df_konu = df_denemeler[df_denemeler["ders"].astype(str).str.strip() == secilen_analiz_dersi.strip()]
             
         konu_listesi = []
         for index, row in df_konu.iterrows():
             hatali = str(row["hatali_konular"]) if pd.notna(row["hatali_konular"]) else ""
             if hatali.strip() != "" and hatali.lower() != "nan":
-                # Virgülle ayrılmış konuları parçalayıp temizleme
                 parcalar = [k.strip() for k in hatali.split(",") if k.strip() != ""]
                 konu_listesi.extend(parcalar)
                 
@@ -515,8 +545,12 @@ with tabs[2]:
             
             col_k1, col_k2 = st.columns([2, 1])
             with col_k1:
-                fig_konu = px.bar(sıklık_df, x="Konu", y="Hata Frekansı", color="Hata Frekansı", title="En Çok Hata Yapılan Konular", text_auto=True)
+                fig_konu = px.bar(sıklık_df, x="Konu", y="Hata Frekansı", color="Hata Frekansı", title="Hata Sayıları (Sütun)", text_auto=True)
                 st.plotly_chart(fig_konu, use_container_width=True)
+                
+                fig_pie = px.pie(sıklık_df, names="Konu", values="Hata Frekansı", title="Hata Oranları Dağılımı (Pasta Grafiği)", hole=0.3)
+                st.plotly_chart(fig_pie, use_container_width=True)
+
             with col_k2:
                 st.dataframe(sıklık_df, use_container_width=True)
                 
@@ -580,3 +614,69 @@ with tabs[3]:
                     st.error(f"Silme hatası: {e}")
         else:
             st.info("Aktif görev bulunmuyor.")
+
+# ------------------------------------------
+# TAB 5: 👑 YÖNETİCİ (ADMİN) PANELİ (Sadece "Ev" Kullanıcısına Özel)
+# ------------------------------------------
+if IS_ADMIN:
+    with tabs[4]:
+        st.header("👑 Tüm Öğrencilerin Net ve Koçluk Analiz Paneli")
+        
+        df_users = get_all_users()
+        df_all_denemeler = get_denemeler()
+        
+        if df_users.empty:
+            st.warning("Sistemde henüz kayıtlı kullanıcı bulunmuyor.")
+        else:
+            # Kullanıcı ID -> Kullanıcı Adı Eşleştirmesi
+            user_dict = dict(zip(df_users["id"], df_users["username"]))
+            
+            col_a1, col_a2 = st.columns([1, 2])
+            
+            with col_a1:
+                st.subheader("👥 Öğrenci Seçimi")
+                secilen_ogrenci_id = st.selectbox(
+                    "İncelemek İstediğiniz Öğrenciyi Seçin", 
+                    options=df_users["id"].tolist(),
+                    format_func=lambda x: user_dict.get(x, f"Kullanıcı ID: {x}"),
+                    key="admin_user_select"
+                )
+                secilen_ogrenci_adi = user_dict.get(secilen_ogrenci_id, "Bilinmiyor")
+                
+            with col_a2:
+                st.subheader(f"📊 {secilen_ogrenci_adi} - Özet İstatistikler")
+                ogrenci_denemeleri = df_all_denemeler[df_all_denemeler["user_id"] == secilen_ogrenci_id] if not df_all_denemeler.empty else pd.DataFrame()
+                
+                if not ogrenci_denemeleri.empty:
+                    toplam_girilen = len(ogrenci_denemeleri)
+                    ort_net = ogrenci_denemeleri["net"].mean()
+                    m1, m2 = st.columns(2)
+                    m1.metric("Girilen Toplam Sınav/Branş", f"{toplam_girilen} Adet")
+                    m2.metric("Ortalama Net", f"{ort_net:.2f}")
+                else:
+                    st.info(f"{secilen_ogrenci_adi} henüz hiç deneme girmemiş.")
+
+            st.markdown("---")
+            
+            if not ogrenci_denemeleri.empty:
+                st.subheader(f"📈 {secilen_ogrenci_adi} - Net Gelişim Grafiği")
+                fig_admin_line = px.line(
+                    ogrenci_denemeleri, 
+                    x="tarih", 
+                    y="net", 
+                    color="ders", 
+                    hover_data=["yayin", "kayit_turu"],
+                    title=f"{secilen_ogrenci_adi} Öğrencisinin Net Değişimi", 
+                    markers=True
+                )
+                st.plotly_chart(fig_admin_line, use_container_width=True)
+                
+                st.subheader(f"📝 {secilen_ogrenci_adi} - Tüm Deneme Kayıtları")
+                st.dataframe(ogrenci_denemeleri[["tarih", "yayin", "kayit_turu", "ders", "dogru", "yanlis", "net", "hatali_konular"]], use_container_width=True)
+            
+            st.markdown("---")
+            st.subheader("🌐 Tüm Sistemdeki Genel Deneme Verileri (Tüm Öğrenciler)")
+            if not df_all_denemeler.empty:
+                df_all_display = df_all_denemeler.copy()
+                df_all_display["Kullanıcı Adı"] = df_all_display["user_id"].map(user_dict)
+                st.dataframe(df_all_display[["Kullanıcı Adı", "tarih", "yayin", "kayit_turu", "ders", "dogru", "yanlis", "net", "hatali_konular"]], use_container_width=True)
