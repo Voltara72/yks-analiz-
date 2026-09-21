@@ -28,20 +28,113 @@ def akilli_uyari_gonder(mesaj: str) -> bool:
 
 st.set_page_config(page_title="YKS Detaylı Analiz & Koçluk Paneli", layout="wide")
 
-# Hazır YKS Konu Sözlüğü
+# ==========================================
+# GENİŞLETİLMİŞ DETAYLI YKS KONU LİSTESİ
+# ==========================================
 HAZIR_KONULAR = {
-    "TYT Türkçe": ["Paragraf", "Dil Bilgisi", "Yazım Kuralları", "Noktalama İşaretleri", "Sözcükte Anlam", "Cümlede Anlam", "Ses Bilgisi"],
-    "TYT Matematik": ["Temel Kavramlar", "Sayı Basamakları", "Bölme-Bölünebilme", "EBOB-EKOK", "Rasyonel Sayılar", "Basit Eşitsizlikler", "Mutlak Değer", "Üslü Sayılar", "Köklü Sayılar", "Çarpanlara Ayırma", "Oran-Orantı", "Problem Türleri", "Mantar & Kümeler", "Fonksiyonlar", "Permütasyon-Kombinasyon", "Olasılık"],
-    "TYT Sosyal": ["Tarih Bilimine Giriş", "İlk Türk Devletleri", "İslam Tarihi", "Osmanlı Tarihi", "Milli Mücadele", "Coğrafi Konum", "Harita Bilgisi", "İklim Bilgisi", "Nüfus ve Yerleşme", "Felsefenin Alanı", "Din Kültürü Temel Kavramlar"],
-    "TYT Fen": ["Fizik Bilimine Giriş", "Madde ve Özellikleri", "Kuvvet ve Hareket", "İş Güç Enerji", "Isı ve Sıcaklık", "Elektrik ve Magnetizma", "Dalgalar", "Optik", "Kimyanın Temel Kanunları", "Atom ve Periyodik Sistem", "Kimyasal Türler Arası Etkileşim", "Maddenin Halleri", "Asitler Bazlar Tuzlar", "Canlıların Ortak Özellikleri", "Hücre", "Canlıların Sınıflandırılması", "Hücre Bölünmeleri", "Kalıtım", "Ekosistem"],
-    "AYT Matematik": ["Polinomlar", "2. Dereceden Denklemler", "Karmaşık Sayılar", "Parabol", "Eşitsizlikler", "Trigonometri", "Logaritma", "Diziler", "Limit ve Süreklilik", "Türev", "İntegral", "Analitik Geometri", "Çember ve Daire", "Katı Cisimler"],
-    "AYT Fizik": ["Vektörler", "Bağıl Hareket", "Newton'un Hareket Yasaları", "Bir Boyutta Sabit İvmeli Hareket", "Atışlar", "İş Güç Enerji", "İtme ve Çizgisel Momentum", "Tork ve Denge", "Basit Makineler", "Elektriksel Alan ve Potansiyel", "Kondansatörler", "Manyetizma", "Alternatif Akım", "Çembersel Hareket", "Basit Harmonik Hareket", "Dalga Mekaniği", "Modern Fizik"],
-    "AYT Kimya": ["Modern Atom Teorisi", "Gazlar", "Sıvı Çözeltiler", "Kimyasal Tepkimelerde Enerji", "Tepkime Hızları", "Kimyasal Denge", "Asit-Baz Dengesi", "Çözünürlük Dengesi (KÇÇ)", "Kimya ve Elektrik", "Organik Kimyaya Giriş", "Organik Bileşikler"],
-    "AYT Biyoloji": ["İnsan Fizyolojisi", "Sinir Sistemi", "Duyu Organları", "Destek ve Hareket Sistemi", "Sindirim Sistemi", "Dolaşım Sistemi", "Solunum Sistemi", "Boşaltım Sistemi", "Üreme Sistemi", "Komünite ve Popülasyon Ekolojisi", "Genden Proteine", "Canlılarda Enerji Dönüşümleri", "Bitki Biyolojisi"],
-    "AYT Edebiyat": ["Metinlerin Sınıflandırılması", "Şiir Bilgisi", "Edebi Sanatlar", "İslamiyet Öncesi Türk Edebiyatı", "Halk Edebiyatı", "Divan Edebiyatı", "Tanzimat Edebiyatı", "Servet-i Fünun Edebiyatı", "Milli Edebiyat", "Cumhuriyet Dönemi Türk Edebiyatı"],
-    "AYT Tarih": ["Tarih ve Zaman", "İnsanlığın İlk Dönemleri", "Orta Çağ'da Dünya", "İlk ve Orta Çağlarda Türk Dünyası", "İslam Medeniyetinin Doğuşu", "Osmanlı Devleti", "20. Yüzyıl Başlarında Osmanlı", "Milli Mücadele", "Atatürkçülük ve İnkılaplar"],
-    "AYT Coğrafya": ["Ekosistem", "Nüfus Politikaları", "Türkiye'de Yerleşme ve Arazi Kullanımı", "Ekonomik Faaliyetler", "Küresel ve Bölgesel Örgütler", "Çevre ve Toplum"],
-    "AYT Felsefe Grubu": ["Felsefeyi Tanıma", "Bilgi Felsefesi", "Varlık Felsefesi", "Ahlak Felsefesi", "Psikolojinin Temel Süreçleri", "Sosyolojiye Giriş", "Mantık"]
+    "TYT Türkçe": [
+        "Sözcükte Anlam", "Cümlede Anlam", "Paragrafta Anlam", "Paragrafta Yapı", "Paragrafta Ana Fikir", 
+        "Ses Bilgisi", "Yazım Kuralları", "Noktalama İşaretleri", "Sözcük Türleri (İsim, Sıfat, Zamir)", 
+        "Fiiller ve Fiilimsiler", "Cümlenin Ögeleri", "Cümle Türleri", "Anlatım Bozuklukları"
+    ],
+    "TYT Matematik": [
+        "Temel Kavramlar", "Sayı Basamakları", "Bölme ve Bölünebilme", "EBOB - EKOK", "Rasyonel Sayılar", 
+        "Basit Eşitsizlikler", "Mutlak Değer", "Üslü İfadeler", "Köklü İfadeler", "Çarpanlara Ayırma", 
+        "Oran - Orantı", "Denklem Çözme", "Sayı-Kesir Problemleri", "Yaş Problemleri", "Yüzde-Kâr-Zarar Problemleri", 
+        "Karışım Problemleri", "Hız-Hareket Problemleri", "İşçi-Havuz Problemleri", "Kümeler ve Mantık", 
+        "Fonksiyonlar", "Permütasyon - Kombinasyon", "Olasılık", "İstatistik ve Veri"
+    ],
+    "TYT Geometri": [
+        "Geometrik Kavramlar ve Doğruda Açılar", "Üçgende Açılar", "Dik Üçgen ve Özel Üçgenler", 
+        "İkizkenar ve Eşkenar Üçgen", "Üçgende Alan", "Üçgende Benzerlik", "Açıortay ve Kenarortay", 
+        "Çokgenler", "Paralelkenar ve Eşkenar Dörtgen", "Dikdörtgen ve Kare", "Yamuk ve Deltoid", 
+        "Çember ve Daire", "Katı Cisimler (Prizma, Piramit, Küre)"
+    ],
+    "TYT Fizik": [
+        "Fizik Bilimine Giriş", "Madde ve Özellikleri", "Kuvvet ve Hareket", "İş, Güç ve Enerji", 
+        "Isı, Sıcaklık ve Genleşme", "Basınç ve Kaldırma Kuvveti", "Elektrostatik", "Elektrik ve Manyetizma", 
+        "Dalgalar", "Optik (Yansıma, Kırılma, Mercekler)"
+    ],
+    "TYT Kimya": [
+        "Kimya Bilimi", "Atom ve Periyodik Sistem", "Kimyasal Türler Arası Etkileşimler", 
+        "Maddenin Halleri", "Doğa ve Kimya", "Kimyanın Temel Kanunları", "Mol Kavramı", 
+        "Tepkime Türleri ve Hesaplamalar", "Karışımlar", "Asitler, Bazlar ve Tuzlar", "Kimya Her Yerde"
+    ],
+    "TYT Biyoloji": [
+        "Canlıların Ortak Özellikleri", "Canlıların Temel Bileşikleri", "Hücre ve Organeller", 
+        "Hücre Zarlarından Madde Geçişi", "Canlıların Sınıflandırılması", "Hücre Bölünmeleri (Mitoz & Mayoz)", 
+        "Kalıtım İlkeleri", "Ekosistem Ekolojisi ve Güncel Çevre Sorunları"
+    ],
+    "TYT Tarih": [
+        "Tarih Bilimi", "İlk Çağ Uygarlıkları", "Türk Dünya Tarihi", "İslam Medeniyetinin Doğuşu", 
+        "İlk Türk-İslam Devletleri", "Osmanlı Devleti Kuruluş ve Yükselme", "Osmanlı Kültür ve Medeniyeti", 
+        "20. Yüzyıl Başlarında Osmanlı", "Milli Mücadele Hazırlık ve Cepheler", "Atatürkçülük ve İnkılaplar"
+    ],
+    "TYT Coğrafya": [
+        "Doğa ve İnsan", "Dünyanın Şekli ve Hareketleri", "Coğrafi Konum", "Harita Bilgisi", 
+        "Atmosfer ve İklim", "Yerin Şekillenmesi (İç ve Dış Kuvvetler)", "Nüfus ve Yerleşme", 
+        "Türkiye'nin Fiziki Özellikleri", "Doğal Afetler"
+    ],
+    "TYT Felsefe": [
+        "Felsefeyi Tanıma", "Bilgi Felsefesi (Epistemoloji)", "Varlık Felsefesi (Ontoloji)", 
+        "Ahlak Felsefesi (Etik)", "Sanat Felsefesi", "Din Felsefesi", "Siyaset Felsefesi", "Bilim Felsefesi"
+    ],
+    "TYT Din Kültürü": [
+        "Bilgi ve İnanç", "İbadet", "Ahlak ve Değerler", "Allah İnsan İlişkisi", 
+        "Hz. Muhammed (S.A.V.)", "Vahiy ve Akıl", "İslam ve Bilim", "Anadolu'da İslam"
+    ],
+    "AYT Matematik": [
+        "Polinomlar", "İkinci Dereceden Denklemler", "Karmaşık Sayılar", "Parabol", 
+        "Eşitsizlikler", "Trigonometri", "Logaritma", "Diziler", 
+        "Limit ve Süreklilik", "Türev ve Uygulamaları", "İntegral ve Uygulamaları"
+    ],
+    "AYT Geometri": [
+        "Doğrunun Analitik İncelenmesi", "Çemberin Analitik İncelenmesi", "Dönüşüm Geometrisi", 
+        "Çember ve Daire", "Uzay Geometri ve Katı Cisimler"
+    ],
+    "AYT Fizik": [
+        "Vektörler ve Bağıl Hareket", "Newton'un Hareket Yasaları", "Atışlar", "İş, Güç, Enerji", 
+        "İtme ve Momentum", "Tork, Denge ve Kütle Merkezi", "Basit Makineler", "Elektriksel Kuvvet ve Potansiyel", 
+        "Kondansatörler", "Manyetizma ve Elektromanyetik İndükleme", "Alternatif Akım ve Transformatörler", 
+        "Düzgün Çembersel Hareket", "Basit Harmonik Hareket", "Dalga Mekaniği (Girişim)", "Atom Fiziği ve Modern Fizik"
+    ],
+    "AYT Kimya": [
+        "Modern Atom Teorisi ve Periyodik Sistem", "Gazlar", "Sıvı Çözeltiler ve Çözünürlük", 
+        "Kimyasal Tepkimelerde Enerji", "Tepkime Hızları", "Kimyasal Denge", "Asit-Baz Dengesi", 
+        "Çözünürlük Dengesi (KÇÇ)", "Kimya ve Elektrik (Redoks, Piller, Elektroliz)", "Organik Kimyaya Giriş", "Organik Bileşikler"
+    ],
+    "AYT Biyoloji": [
+        "Sinir Sistemi", "Duyu Organları", "Endokrin Sistem", "Destek ve Hareket Sistemi", 
+        "Sindirim Sistemi", "Dolaşım ve Bağışıklık Sistemi", "Solunum Sistemi", "Boşaltım Sistemi", 
+        "Üreme Sistemi ve Gelişme", "Komünite ve Popülasyon Ekolojisi", "Genden Proteine (Nükleik Asitler & Protein Sentezi)", 
+        "Canlılarda Enerji Dönüşümleri (Fotosentez, Kemosentez, Hücresel Solunum)", "Bitki Biyolojisi"
+    ],
+    "AYT Edebiyat": [
+        "Güzel Sanatlar ve Edebiyat", "Metinlerin Sınıflandırılması", "Şiir Bilgisi ve Edebi Sanatlar", 
+        "İslamiyet Öncesi ve Geçiş Dönemi Türk Edebiyatı", "Halk Edebiyatı", "Divan Edebiyatı", 
+        "Tanzimat Edebiyatı", "Servet-i Fünun ve Fecr-i Ati Edebiyatı", "Milli Edebiyat", "Cumhuriyet Dönemi Edebiyatı", "Edebi Akımlar"
+    ],
+    "AYT Tarih 1 - 2": [
+        "Tarih ve Zaman", "İnsanlığın İlk Dönemleri", "Orta Çağ'da Dünya", "İlk ve Orta Çağlarda Türk Dünyası", 
+        "İslam Medeniyetinin Doğuşu", "Türklerin İslamiyet'i Kabulü", "Yerleşme ve Devletleşme Sürecinde Selçuklu", 
+        "Osmanlı Siyaseti ve Beylikten Devlete", "Dünya Gücü Osmanlı", "20. Yüzyıl Başlarında Osmanlı", 
+        "Milli Mücadele", "Atatürkçülük ve İnkılaplar", "İki Dünya Savaşı Arasındaki Dönem", "Soğuk Savaş Dönemi ve Küreselleşen Dünya"
+    ],
+    "AYT Coğrafya 1 - 2": [
+        "Ekosistem ve Madde Döngüleri", "Şehirler ve Etki Alanları", "Türkiye'de Ekonomi ve Sektörler", 
+        "Küresel Ticaret ve Turizm", "Türkiye'nin Jeopolitik Konumu", "Bölgesel Kalkınma Projeleri", 
+        "Küresel ve Bölgesel Örgütler", "Çevre Sorunları ve Sürdürülebilirlik"
+    ],
+    "AYT Felsefe Grubu": [
+        "Psikolojinin Temel Süreçleri", "Öğrenme, Bellek ve Düşünme", "Ruh Sağlığı", 
+        "Sosyolojiye Giriş ve Toplumsal Yapı", "Toplumsal Değişme ve Kültür", "Toplumsal Kurumlar", 
+        "Mantığa Giriş", "Klasik Mantık (Kavram, Önerme, Çıkarım)", "Sembolik Mantık"
+    ],
+    "YDT İngilizce": [
+        "Grammar / Dilbilgisi", "Vocabulary / Kelime Bilgisi", "Cloze Test", "Sentence Completion / Cümle Tamamlama", 
+        "Reading Comprehension / Paragraf", "Dialogue Completion / Diyalog", "Restatement / Yakın Anlam", 
+        "Paragraph Completion / Paragraf Tamamlama", "Irrelevant Sentence / Akışı Bozan Cümle", "Translation / Çeviri"
+    ]
 }
 
 DERS_LISTESI = list(HAZIR_KONULAR.keys())
@@ -162,21 +255,36 @@ with tabs[0]:
             tarih = st.date_input("Deneme Tarihi", datetime.now(), key="add_tarih")
             yayin = st.text_input("Yayın Adı", placeholder="Örn: 3D, Bilgi Sarmal, Özdebir", key="add_yayin")
             kayit_turu = st.selectbox("Kayıt Türü", ["TYT Genel", "AYT Genel", "Branş Denemesi"], key="add_kayit_turu")
-            ders = st.selectbox("Ders", ["Genel"] + DERS_LISTESI, key="add_ders")
+            
+            # Ders Seçici
+            ders_secim_listesi = ["Genel / Tüm Dersler"] + DERS_LISTESI
+            ders = st.selectbox("Ders Seçin", ders_secim_listesi, key="add_ders")
+
         with col2:
             dogru = st.number_input("Doğru Sayısı", min_value=0.0, step=1.0, key="add_dogru")
             yanlis = st.number_input("Yanlış Sayısı", min_value=0.0, step=1.0, key="add_yanlis")
             net = dogru - (yanlis * 0.25)
             st.metric("Hesaplanan Net", f"{net:.2f}")
             
-            # Dinamik Konu Seçici (Hazır listeden seç veya manuel ekle)
-            mevcut_konular = HAZIR_KONULAR.get(ders, [])
-            secilen_konular = st.multiselect("Hatalı / Boş Bırakılan Konuları Seçin", options=mevcut_konular, key="add_konu_select")
-            ek_konu = st.text_input("Listede Yoksa Manuel Ekleyin (Virgülle ayırın)", key="add_ek_konu", placeholder="Örn: Özel Konu 1, Ekstra Konu 2")
+            # Dinamik Konu Listesi Filtreleme
+            if ders in HAZIR_KONULAR:
+                secilen_ders_konulari = HAZIR_KONULAR[ders]
+            else:
+                # Tüm konuları birleştirip göster (Genel denemeler için)
+                tum_konular_listesi = []
+                for konuliste in HAZIR_KONULAR.values():
+                    tum_konular_listesi.extend(konuliste)
+                secilen_ders_konulari = list(set(tum_konular_listesi))
+            
+            secilen_konular = st.multiselect(
+                "Hazır Listeden Hatalı/Boş Konuları Seçin", 
+                options=secilen_ders_konulari, 
+                key=f"add_konu_select_{ders}"
+            )
+            ek_konu = st.text_input("Diğer / Manuel Eklemek İstediğiniz Konular (Virgülle ayırın)", key="add_ek_konu", placeholder="Örn: Paragraf, Optik")
 
         if st.button("Denemeyi Kaydet", use_container_width=True, key="btn_add_deneme"):
             try:
-                # Seçilen ve manuel yazılan konuları birleştirme
                 tum_hatali = list(secilen_konular)
                 if ek_konu.strip():
                     tum_hatali.extend([k.strip() for k in ek_konu.split(",") if k.strip()])
@@ -228,7 +336,7 @@ with tabs[0]:
                 kt_idx = kt_list.index(secili_row["kayit_turu"]) if secili_row["kayit_turu"] in kt_list else 0
                 e_kayit_turu = st.selectbox("Kayıt Türü Düzenle", kt_list, index=kt_idx, key=f"edit_kt_{secilen_id}")
                 
-                d_list = ["Genel"] + DERS_LISTESI
+                d_list = ["Genel / Tüm Dersler"] + DERS_LISTESI
                 d_idx = d_list.index(secili_row["ders"]) if secili_row["ders"] in d_list else 0
                 e_ders = st.selectbox("Ders Düzenle", d_list, index=d_idx, key=f"edit_ders_{secilen_id}")
                 
@@ -276,14 +384,24 @@ with tabs[1]:
     if df_denemeler.empty:
         st.info("Grafikleri görmek için önce deneme ekleyin.")
     else:
-        filtre_turu = st.selectbox("Filtrele", ["Tümü", "TYT Genel", "AYT Genel", "Branş Denemesi"], key="chart_filter")
-        df_filtered = df_denemeler if filtre_turu == "Tümü" else df_denemeler[df_denemeler["kayit_turu"] == filtre_turu]
+        col_f1, col_f2 = st.columns(2)
+        with col_f1:
+            filtre_turu = st.selectbox("Kayıt Türüne Göre Filtrele", ["Tümü", "TYT Genel", "AYT Genel", "Branş Denemesi"], key="chart_filter_turu")
+        with col_f2:
+            filtre_ders = st.selectbox("Derse Göre Filtrele", ["Tüm Dersler"] + DERS_LISTESI, key="chart_filter_ders")
+        
+        df_filtered = df_denemeler.copy()
+        if filtre_turu != "Tümü":
+            df_filtered = df_filtered[df_filtered["kayit_turu"] == filtre_turu]
+        if filtre_ders != "Tüm Dersler":
+            df_filtered = df_filtered[df_filtered["ders"] == filtre_ders]
         
         if not df_filtered.empty:
             fig = px.line(df_filtered, x="tarih", y="net", color="kayit_turu", hover_data=["yayin", "ders"], title="Zaman İçindeki Net Değişimi", markers=True)
             st.plotly_chart(fig, use_container_width=True)
+            st.dataframe(df_filtered[["tarih", "yayin", "kayit_turu", "ders", "dogru", "yanlis", "net"]], use_container_width=True)
         else:
-            st.warning("Seçilen kategoride deneme bulunamadı.")
+            st.warning("Seçilen filtrelerde deneme bulunamadı.")
 
 # ------------------------------------------
 # TAB 3: KONU ANALİZİ & DERS DERS AKILLI UYARI
