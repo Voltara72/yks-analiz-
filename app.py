@@ -30,7 +30,7 @@ def akilli_uyari_gonder(mesaj: str) -> bool:
 st.set_page_config(page_title="YKS Detaylı Analiz & Koçluk Paneli", layout="wide")
 
 # ==========================================
-# DERS DERS YKS KONU LİSTESİ
+# DERS DERS YKS KONU LİSTESİ (Geometri Branşları Dahil Edildi)
 # ==========================================
 HAZIR_KONULAR = {
     "TYT Türkçe": [
@@ -374,7 +374,7 @@ with tabs[0]:
                 except Exception as e:
                     st.error(f"Hata oluştu: {e}")
 
-        # --- 3. BRANŞ DENEMESİ ---
+        # --- 3. BRANŞ DENEMESİ (Geometri Dahil) ---
         else:
             st.markdown("### 📙 Tek Ders / Branş Denemesi Girişi")
             col_b1, col_b2 = st.columns(2)
@@ -628,7 +628,6 @@ if IS_ADMIN:
         if df_users.empty:
             st.warning("Sistemde henüz kayıtlı kullanıcı bulunmuyor.")
         else:
-            # Kullanıcı ID -> Kullanıcı Adı Eşleştirmesi
             user_dict = dict(zip(df_users["id"], df_users["username"]))
             
             col_a1, col_a2 = st.columns([1, 2])
