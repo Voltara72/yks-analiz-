@@ -30,7 +30,7 @@ def akilli_uyari_gonder(mesaj: str) -> bool:
 st.set_page_config(page_title="YKS Detaylı Analiz & Koçluk Paneli", layout="wide")
 
 # ==========================================
-# DERS DERS YKS KONU LİSTESİ (Geometri Dahil)
+# DERS DERS YKS KONU LİSTESİ (TYT-AYT Matematik İçinde Geometri Konuları Dahil)
 # ==========================================
 HAZIR_KONULAR = {
     "TYT Türkçe": [
@@ -43,9 +43,8 @@ HAZIR_KONULAR = {
         "Basit Eşitsizlikler", "Mutlak Değer", "Üslü İfadeler", "Köklü İfadeler", "Çarpanlara Ayırma", 
         "Oran-Orantı", "Denklem Çözme", "Sayı-Kesir Problemleri", "Yaş Problemleri", "Yüzde-Kâr-Zarar Problemleri", 
         "Karışım Problemleri", "Hız-Hareket Problemleri", "İşçi-Havuz Problemleri", "Kümeler ve Mantık", 
-        "Fonksiyonlar", "Permütasyon-Kombinasyon", "Olasılık", "İstatistik"
-    ],
-    "TYT Geometri": [
+        "Fonksiyonlar", "Permütasyon-Kombinasyon", "Olasılık", "İstatistik",
+        # TYT Geometri (Matematik İçinde de Seçilebilmesi İçin Eklendi)
         "Doğruda ve Üçgende Açılar", "Dik ve Özel Üçgenler", "İkizkenar-Eşkenar Üçgen", "Üçgende Alan", 
         "Üçgende Benzerlik", "Açıortay-Kenarortay", "Çokgenler ve Dörtgenler", "Paralelkenar-Eşkenar Dörtgen", 
         "Dikdörtgen ve Kare", "Yamuk ve Deltoid", "Çember ve Daire", "Katı Cisimler"
@@ -79,9 +78,8 @@ HAZIR_KONULAR = {
     "AYT Matematik": [
         "Polinomlar", "İkinci Dereceden Denklemler", "Karmaşık Sayılar", "Parabol", 
         "Eşitsizlikler", "Trigonometri", "Logaritma", "Diziler", 
-        "Limit ve Süreklilik", "Türev ve Uygulamaları", "İntegral ve Uygulamaları"
-    ],
-    "AYT Geometri": [
+        "Limit ve Süreklilik", "Türev ve Uygulamaları", "İntegral ve Uygulamaları",
+        # AYT Geometri (Matematik İçinde de Seçilebilmesi İçin Eklendi)
         "Noktanın ve Doğrunun Analitiği", "Çemberin Analitik İncelenmesi", "Dönüşüm Geometrisi", 
         "Çember ve Daire", "Katı Cisimler"
     ],
@@ -149,7 +147,6 @@ def get_denemeler(user_id=None):
             res = supabase.table("denemeler").select("*").execute()
         return pd.DataFrame(res.data) if res.data else pd.DataFrame()
     except Exception as e:
-        st.error(f"Denemeler çekilemedi: {e}")
         return pd.DataFrame()
 
 def get_yanlislar(user_id=None):
@@ -270,7 +267,7 @@ with tabs[0]:
         
         if deneme_turu == "TYT Genel Deneme":
             st.markdown("### 📘 TYT Ders Ders Net ve Hatalı Konu Girişi")
-            tyt_dersler = ["TYT Türkçe", "TYT Matematik", "TYT Geometri", "TYT Fizik", "TYT Kimya", "TYT Biyoloji", "TYT Tarih", "TYT Coğrafya", "TYT Felsefe & Din"]
+            tyt_dersler = ["TYT Türkçe", "TYT Matematik", "TYT Fizik", "TYT Kimya", "TYT Biyoloji", "TYT Tarih", "TYT Coğrafya", "TYT Felsefe & Din"]
             tyt_kayitlar = []
             toplam_net = 0.0
             for d_adi in tyt_dersler:
@@ -302,7 +299,7 @@ with tabs[0]:
 
         elif deneme_turu == "AYT Genel Deneme":
             st.markdown("### 📗 AYT Ders Ders Net ve Hatalı Konu Girişi")
-            ayt_dersler = ["AYT Matematik", "AYT Geometri", "AYT Fizik", "AYT Kimya", "AYT Biyoloji", "AYT Edebiyat", "AYT Tarih", "AYT Coğrafya"]
+            ayt_dersler = ["AYT Matematik", "AYT Fizik", "AYT Kimya", "AYT Biyoloji", "AYT Edebiyat", "AYT Tarih", "AYT Coğrafya"]
             ayt_kayitlar = []
             toplam_net = 0.0
             for d_adi in ayt_dersler:
@@ -400,7 +397,7 @@ with tabs[0]:
             st.success("Yüklendi!")
 
 # ------------------------------------------
-# TAB 2: YANLIŞ DEFTERİ (Ders, Konu Seçimi ve "Hepsi" Filtresi)
+# TAB 2: YANLIŞ DEFTERİ (Fotoğraflı + Hepsi Filtreli)
 # ------------------------------------------
 with tabs[1]:
     st.header("❌ Yanlış Defteri & Soru Bankası")
@@ -411,7 +408,14 @@ with tabs[1]:
         st.subheader("Yanlış Yaptığın Soruyu Kaydet")
         y_ders = st.selectbox("Ders Seçin", DERS_LISTESI, key="yanlis_ders_sec")
         y_konu = st.selectbox("Konu Seçin", HAZIR_KONULAR.get(y_ders, []), key="yanlis_konu_sec")
-        y_not = st.text_area("Soru Notu / Çözüm Açıklaması", placeholder="Örn: Bu soruda işlem hatası yaptım, formülü yanlış hatırlamışım.", key="yanlis_not")
+        y_not = st.text_area("Soru Notu / Çözüm Açıklaması", placeholder="Örn: İşlem hatası yaptım...", key="yanlis_not")
+        
+        y_foto_dosya = st.file_uploader("Sorunun Fotoğrafını Yükle", type=["png", "jpg", "jpeg"], key="yanlis_foto_yukle")
+        
+        foto_adi = ""
+        if y_foto_dosya is not None:
+            st.image(y_foto_dosya, caption="Yüklenen Soru Görseli", use_container_width=True)
+            foto_adi = y_foto_dosya.name
         
         if st.button("Yanlış Soruyu Deftere Ekle", type="primary", key="btn_add_yanlis"):
             try:
@@ -420,12 +424,13 @@ with tabs[1]:
                     "ders": y_ders,
                     "konu": y_konu,
                     "notlar": y_not,
-                    "tarih": str(datetime.now().date())
+                    "tarih": str(datetime.now().date()),
+                    "foto_adi": foto_adi
                 }
                 supabase.table("yanlis_defteri").insert(data).execute()
-                st.success("Yanlış soru defterine eklendi!")
+                st.success("Yanlış soru deftere eklendi!")
             except Exception as e:
-                st.error(f"Hata oluştu (Tablo oluşturulmamış olabilir): {e}")
+                st.error(f"Hata oluştu: {e}")
 
     with sub_t_liste:
         st.subheader("Filtrelenmiş Yanlış Sorularım")
@@ -434,15 +439,11 @@ with tabs[1]:
         if df_yanlislar.empty:
             st.info("Yanlış defterinde henüz kayıtlı soru bulunmuyor.")
         else:
-            # Filtreleme Seçenekleri
             f_col1, f_col2 = st.columns(2)
             with f_col1:
                 secilen_fiyat_ders = st.selectbox("Ders Filtresi", ["Hepsi"] + DERS_LISTESI, key="filtre_yanlis_ders")
             with f_col2:
-                if secilen_fiyat_ders == "Hepsi":
-                    konu_secenekleri = ["Hepsi"]
-                else:
-                    konu_secenekleri = ["Hepsi"] + HAZIR_KONULAR.get(secilen_fiyat_ders, [])
+                konu_secenekleri = ["Hepsi"] if secilen_fiyat_ders == "Hepsi" else ["Hepsi"] + HAZIR_KONULAR.get(secilen_fiyat_ders, [])
                 secilen_fiyat_konu = st.selectbox("Konu Filtresi", konu_secenekleri, key="filtre_yanlis_konu")
                 
             df_filtered_y = df_yanlislar.copy()
@@ -452,8 +453,15 @@ with tabs[1]:
                 df_filtered_y = df_filtered_y[df_filtered_y["konu"] == secilen_fiyat_konu]
                 
             if not df_filtered_y.empty:
-                st.dataframe(df_filtered_y[["id", "tarih", "ders", "konu", "notlar"]], use_container_width=True)
+                for index, row in df_filtered_y.iterrows():
+                    with st.expander(f"ID: {row['id']} | {row['ders']} - {row['konu']} ({row['tarih']})"):
+                        st.write(f"**Not / Açıklama:** {row['notlar']}")
+                        if "foto_adi" in row and pd.notna(row["foto_adi"]) and row["foto_adi"]:
+                            st.info(f"📁 Eklenen Görsel: {row['foto_adi']}")
+                        else:
+                            st.caption("Bu soruya görsel eklenmemiş.")
                 
+                st.markdown("---")
                 sil_y_id = st.selectbox("Öğrendiğin veya Sildiğin Soru ID'sini Seç", df_filtered_y["id"].tolist(), key="select_delete_yanlis")
                 if st.button("✅ Bu Soruyu Çözdüm / Defterden Sil", type="primary", key="btn_del_yanlis_item"):
                     try:
