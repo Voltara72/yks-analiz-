@@ -390,7 +390,7 @@ with tabs[0]:
             st.success("Yüklendi!")
 
 # ------------------------------------------
-# TAB 2: YANLIŞ DEFTERİ (Boyut Küçültme Eklenmiş Hali)
+# TAB 2: YANLIŞ DEFTERİ (Silgi + Tam Ekran Geniş Çözüm Alanı)
 # ------------------------------------------
 with tabs[1]:
     st.header("❌ Yanlış Defteri & Soru Bankası")
@@ -408,13 +408,11 @@ with tabs[1]:
         foto_base64 = ""
         if y_foto_dosya is not None:
             pil_img = Image.open(y_foto_dosya)
-            
-            # Fotoğrafın boyutunu küçült (Sunucuya rahat sığması için)
-            pil_img.thumbnail((800, 800))
-            st.image(pil_img, caption="Yüklenen Soru Görseli (Boyutlandırıldı)", use_container_width=True)
+            pil_img.thumbnail((1200, 1200))
+            st.image(pil_img, caption="Yüklenen Soru Görseli", use_container_width=True)
             
             buffered = io.BytesIO()
-            pil_img.save(buffered, format="JPEG", quality=85)
+            pil_img.save(buffered, format="JPEG", quality=90)
             foto_base64 = base64.b64encode(buffered.getvalue()).decode()
         
         if st.button("Yanlış Soruyu Deftere Ekle", type="primary", key="btn_add_yanlis"):
@@ -463,28 +461,36 @@ with tabs[1]:
                             try:
                                 img_data = base64.b64decode(row["foto_adi"])
                                 img_bg = Image.open(io.BytesIO(img_data))
-                                st.image(img_bg, caption="📸 Yüklenen Soru Görseli", use_container_width=True)
                             except Exception:
                                 st.caption("Görsel yüklenirken bir hata oluştu.")
                         else:
                             st.caption("Bu soruya henüz görsel yüklenmemiş.")
                         
-                        st.markdown("### ✍️ Kalemle Çözüm Alanı")
-                        c_col1, c_col2, c_col3 = st.columns(3)
-                        with c_col1:
-                            drawing_mode = st.selectbox("Araç", ["freedraw", "line", "rect", "transform"], key=f"mode_{row['id']}")
-                        with c_col2:
-                            stroke_color = st.color_picker("Kalem Rengi", "#FF0000", key=f"color_{row['id']}")
-                        with c_col3:
-                            stroke_width = st.slider("Kalınlık", 1, 15, 3, key=f"width_{row['id']}")
+                        st.markdown("### ✍️ Geniş Soru Çözüm ve Kalem Alanı")
                         
+                        # Kontrol Paneli (Kalem, Silgi, Renk, Kalınlık)
+                        tool_col1, tool_col2, tool_col3, tool_col4 = st.columns(4)
+                        with tool_col1:
+                            secilen_mod = st.radio("İşlem Modu", ["Kalemle Çiz", "🧹 Silgi (Beyaz Kalem)"], horizontal=True, key=f"tool_mode_{row['id']}")
+                        with tool_col2:
+                            if secilen_mod == "🧹 Silgi (Beyaz Kalem)":
+                                stroke_color = "#FFFFFF" # Silmek için arka plan rengi beyaz kullanılır
+                                st.info("Silgi aktif (Beyaz çiziyor)")
+                            else:
+                                stroke_color = st.color_picker("Kalem Rengi", "#FF0000", key=f"color_{row['id']}")
+                        with tool_col3:
+                            stroke_width = st.slider("Kalınlık / Silgi Boyutu", 1, 40, 5, key=f"width_{row['id']}")
+                        with tool_col4:
+                            drawing_mode = st.selectbox("Araç", ["freedraw", "line", "rect"], key=f"mode_{row['id']}")
+                        
+                        # Büyük / Tam Ekran Genişliğinde Tuval Alanı
                         st_canvas(
                             fill_color="rgba(255, 165, 0, 0.3)",
                             stroke_width=stroke_width,
                             stroke_color=stroke_color,
                             background_image=img_bg,
                             update_streamlit=True,
-                            height=500,
+                            height=700,
                             drawing_mode=drawing_mode,
                             key=f"canvas_{row['id']}",
                         )
