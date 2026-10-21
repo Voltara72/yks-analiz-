@@ -390,7 +390,7 @@ with tabs[0]:
             st.success("Yüklendi!")
 
 # ------------------------------------------
-# TAB 2: YANLIŞ DEFTERİ (Görsel Gösterme + Tablet Kalemi ile Çözüm)
+# TAB 2: YANLIŞ DEFTERİ (Boyut Küçültme Eklenmiş Hali)
 # ------------------------------------------
 with tabs[1]:
     st.header("❌ Yanlış Defteri & Soru Bankası")
@@ -408,10 +408,13 @@ with tabs[1]:
         foto_base64 = ""
         if y_foto_dosya is not None:
             pil_img = Image.open(y_foto_dosya)
-            st.image(pil_img, caption="Yüklenen Soru Görseli", use_container_width=True)
+            
+            # Fotoğrafın boyutunu küçült (Sunucuya rahat sığması için)
+            pil_img.thumbnail((800, 800))
+            st.image(pil_img, caption="Yüklenen Soru Görseli (Boyutlandırıldı)", use_container_width=True)
             
             buffered = io.BytesIO()
-            pil_img.save(buffered, format="PNG")
+            pil_img.save(buffered, format="JPEG", quality=85)
             foto_base64 = base64.b64encode(buffered.getvalue()).decode()
         
         if st.button("Yanlış Soruyu Deftere Ekle", type="primary", key="btn_add_yanlis"):
