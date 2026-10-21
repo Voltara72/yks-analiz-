@@ -30,7 +30,7 @@ def akilli_uyari_gonder(mesaj: str) -> bool:
 st.set_page_config(page_title="YKS Detaylı Analiz & Koçluk Paneli", layout="wide")
 
 # ==========================================
-# DERS DERS YKS KONU LİSTESİ (TYT-AYT Matematik İçinde Geometri Konuları Dahil)
+# DERS DERS YKS KONU LİSTESİ (Geometri Konuları Dahil)
 # ==========================================
 HAZIR_KONULAR = {
     "TYT Türkçe": [
@@ -502,7 +502,7 @@ with tabs[2]:
             st.warning("Seçilen filtrelerde deneme bulunamadı.")
 
 # ------------------------------------------
-# TAB 4: KONU ANALİZİ & AKILLI UYARI
+# TAB 4: KONU ANALİZİ, PASTA GRAFİĞİ & AKILLI UYARI
 # ------------------------------------------
 with tabs[3]:
     st.header("⚠️ Konu Analizi & Akıllı Uyarı")
@@ -522,11 +522,15 @@ with tabs[3]:
         if konu_listesi:
             sıklık_df = pd.Series(konu_listesi).value_counts().reset_index()
             sıklık_df.columns = ["Konu", "Hata Frekansı"]
+            
             col_k1, col_k2 = st.columns([2, 1])
             with col_k1:
-                st.plotly_chart(px.bar(sıklık_df, x="Konu", y="Hata Frekansı", color="Hata Frekansı", title="Hata Sayıları", text_auto=True), use_container_width=True)
+                st.plotly_chart(px.bar(sıklık_df, x="Konu", y="Hata Frekansı", color="Hata Frekansı", title="Hata Sayıları (Sütun)", text_auto=True), use_container_width=True)
+                # Pasta Grafiği (Pie Chart) Eklendi
+                st.plotly_chart(px.pie(sıklık_df, names="Konu", values="Hata Frekansı", title="Hata Oranları Dağılımı (Pasta Grafiği)", hole=0.3), use_container_width=True)
             with col_k2:
                 st.dataframe(sıklık_df, use_container_width=True)
+                
             en_cok_hata = sıklık_df.iloc[0]
             st.error(f"🚨 **Akıllı Uyarı:** En çok sorun yaşadığın konu **'{en_cok_hata['Konu']}'** ({en_cok_hata['Hata Frekansı']} kez).")
             if st.button("📲 Telegram'a Gönder", key="btn_send_telegram_alert"):
