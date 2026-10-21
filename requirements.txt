@@ -3,3 +3,5 @@ pandas
 plotly
 requests
 supabase
+Pillow
+streamlit-drawable-canvas
