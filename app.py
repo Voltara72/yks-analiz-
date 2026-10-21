@@ -390,7 +390,7 @@ with tabs[0]:
             st.success("Yüklendi!")
 
 # ------------------------------------------
-# TAB 2: YANLIŞ DEFTERİ (Silgi + Tam Ekran Geniş Çözüm Alanı)
+# TAB 2: YANLIŞ DEFTERİ (Tam Ekran Tuval + Geri Al / Temizle Butonları)
 # ------------------------------------------
 with tabs[1]:
     st.header("❌ Yanlış Defteri & Soru Bankası")
@@ -408,7 +408,7 @@ with tabs[1]:
         foto_base64 = ""
         if y_foto_dosya is not None:
             pil_img = Image.open(y_foto_dosya)
-            pil_img.thumbnail((1200, 1200))
+            pil_img.thumbnail((1400, 1400))
             st.image(pil_img, caption="Yüklenen Soru Görseli", use_container_width=True)
             
             buffered = io.BytesIO()
@@ -464,33 +464,29 @@ with tabs[1]:
                             except Exception:
                                 st.caption("Görsel yüklenirken bir hata oluştu.")
                         else:
-                            st.caption("Bu soruya henüz görsel yüklenmemiş.")
+                            st.caption("Sonradan çizim yapabilmek için görsel yüklenmemiş.")
                         
-                        st.markdown("### ✍️ Geniş Soru Çözüm ve Kalem Alanı")
+                        st.markdown("### ✍️ Tam Ekran Çözüm Alanı")
                         
-                        # Kontrol Paneli (Kalem, Silgi, Renk, Kalınlık)
-                        tool_col1, tool_col2, tool_col3, tool_col4 = st.columns(4)
-                        with tool_col1:
-                            secilen_mod = st.radio("İşlem Modu", ["Kalemle Çiz", "🧹 Silgi (Beyaz Kalem)"], horizontal=True, key=f"tool_mode_{row['id']}")
-                        with tool_col2:
-                            if secilen_mod == "🧹 Silgi (Beyaz Kalem)":
-                                stroke_color = "#FFFFFF" # Silmek için arka plan rengi beyaz kullanılır
-                                st.info("Silgi aktif (Beyaz çiziyor)")
-                            else:
-                                stroke_color = st.color_picker("Kalem Rengi", "#FF0000", key=f"color_{row['id']}")
-                        with tool_col3:
-                            stroke_width = st.slider("Kalınlık / Silgi Boyutu", 1, 40, 5, key=f"width_{row['id']}")
-                        with tool_col4:
-                            drawing_mode = st.selectbox("Araç", ["freedraw", "line", "rect"], key=f"mode_{row['id']}")
+                        # Kontrol Paneli: Renk, Kalınlık ve Geri Al / Temizleme Araçları
+                        c1, c2, c3 = st.columns(3)
+                        with c1:
+                            stroke_color = st.color_picker("Kalem Rengi", "#FF0000", key=f"color_{row['id']}")
+                        with c2:
+                            stroke_width = st.slider("Kalem Kalınlığı", 1, 20, 3, key=f"width_{row['id']}")
+                        with c3:
+                            drawing_mode = st.selectbox("Çizim Aracı", ["freedraw", "line", "rect"], key=f"mode_{row['id']}")
                         
-                        # Büyük / Tam Ekran Genişliğinde Tuval Alanı
+                        st.markdown("💡 *Not: Yaptığın son çizgiyi silmek için tuvalin üstündeki araç çubuğundaki **Geri Al (Undo)** butonuna basabilir veya tamamen temizleyebilirsin.*")
+                        
+                        # Geniş / Neredeyse Tam Ekran Tuval (Yükseklik 850 piksel)
                         st_canvas(
                             fill_color="rgba(255, 165, 0, 0.3)",
                             stroke_width=stroke_width,
                             stroke_color=stroke_color,
                             background_image=img_bg,
                             update_streamlit=True,
-                            height=700,
+                            height=850,
                             drawing_mode=drawing_mode,
                             key=f"canvas_{row['id']}",
                         )
