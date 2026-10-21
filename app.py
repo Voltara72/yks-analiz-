@@ -136,7 +136,7 @@ def login_user(username, password):
         if res.data:
             return True, res.data[0]
         return False, None
-    except Exception as e:
+    except Exception:
         return False, None
 
 def get_denemeler(user_id=None):
@@ -410,7 +410,6 @@ with tabs[1]:
             pil_img = Image.open(y_foto_dosya)
             st.image(pil_img, caption="Yüklenen Soru Görseli", use_container_width=True)
             
-            # Görseli Base64 Metnine Çevir
             buffered = io.BytesIO()
             pil_img.save(buffered, format="PNG")
             foto_base64 = base64.b64encode(buffered.getvalue()).decode()
@@ -467,7 +466,6 @@ with tabs[1]:
                         else:
                             st.caption("Bu soruya henüz görsel yüklenmemiş.")
                         
-                        # Çizim Tahtası (Tablet Kalemi İle Üzerini Çözebilmek İçin)
                         st.markdown("### ✍️ Kalemle Çözüm Alanı")
                         c_col1, c_col2, c_col3 = st.columns(3)
                         with c_col1:
