@@ -1,4 +1,6 @@
+import base64
 from datetime import datetime
+import io
 import os
 import pandas as pd
 import plotly.express as px
@@ -6,6 +8,7 @@ import requests
 import streamlit as st
 from supabase import create_client, Client
 from PIL import Image
+from streamlit_drawable_canvas import st_canvas
 
 # ==========================================
 # 1. SUPABASE VE TELEGRAM BİLGİLERİ
@@ -23,14 +26,13 @@ def akilli_uyari_gonder(mesaj: str) -> bool:
     try:
         response = requests.post(url, json=payload, timeout=5)
         return response.status_code == 200
-    except Exception as e:
-        st.error(f"Bildirim gönderilemedi: {e}")
+    except Exception:
         return False
 
 st.set_page_config(page_title="YKS Detaylı Analiz & Koçluk Paneli", layout="wide")
 
 # ==========================================
-# DERS DERS YKS KONU LİSTESİ (Geometri Konuları Dahil)
+# DERS DERS YKS KONU LİSTESİ
 # ==========================================
 HAZIR_KONULAR = {
     "TYT Türkçe": [
@@ -44,7 +46,6 @@ HAZIR_KONULAR = {
         "Oran-Orantı", "Denklem Çözme", "Sayı-Kesir Problemleri", "Yaş Problemleri", "Yüzde-Kâr-Zarar Problemleri", 
         "Karışım Problemleri", "Hız-Hareket Problemleri", "İşçi-Havuz Problemleri", "Kümeler ve Mantık", 
         "Fonksiyonlar", "Permütasyon-Kombinasyon", "Olasılık", "İstatistik",
-        # TYT Geometri (Matematik İçinde de Seçilebilmesi İçin Eklendi)
         "Doğruda ve Üçgende Açılar", "Dik ve Özel Üçgenler", "İkizkenar-Eşkenar Üçgen", "Üçgende Alan", 
         "Üçgende Benzerlik", "Açıortay-Kenarortay", "Çokgenler ve Dörtgenler", "Paralelkenar-Eşkenar Dörtgen", 
         "Dikdörtgen ve Kare", "Yamuk ve Deltoid", "Çember ve Daire", "Katı Cisimler"
@@ -79,7 +80,6 @@ HAZIR_KONULAR = {
         "Polinomlar", "İkinci Dereceden Denklemler", "Karmaşık Sayılar", "Parabol", 
         "Eşitsizlikler", "Trigonometri", "Logaritma", "Diziler", 
         "Limit ve Süreklilik", "Türev ve Uygulamaları", "İntegral ve Uygulamaları",
-        # AYT Geometri (Matematik İçinde de Seçilebilmesi İçin Eklendi)
         "Noktanın ve Doğrunun Analitiği", "Çemberin Analitik İncelenmesi", "Dönüşüm Geometrisi", 
         "Çember ve Daire", "Katı Cisimler"
     ],
@@ -146,40 +146,38 @@ def get_denemeler(user_id=None):
         else:
             res = supabase.table("denemeler").select("*").execute()
         return pd.DataFrame(res.data) if res.data else pd.DataFrame()
-    except Exception as e:
+    except Exception:
         return pd.DataFrame()
 
 def get_yanlislar(user_id=None):
     try:
         if user_id:
-            res = supabase.table("yanlis_defteri").select("*").eq("user_id", user_id).execute()
+            res = supabase.table("yanlis_defteri").select("*").eq("user_id", str(user_id)).execute()
         else:
             res = supabase.table("yanlis_defteri").select("*").execute()
         return pd.DataFrame(res.data) if res.data else pd.DataFrame()
-    except Exception as e:
+    except Exception:
         return pd.DataFrame()
 
 def get_all_users():
     try:
         res = supabase.table("users").select("id, username").execute()
         return pd.DataFrame(res.data) if res.data else pd.DataFrame()
-    except Exception as e:
+    except Exception:
         return pd.DataFrame()
 
 def get_hatirlaticilar(user_id):
     try:
         res = supabase.table("hatirlaticilar").select("*").eq("user_id", user_id).execute()
         return pd.DataFrame(res.data) if res.data else pd.DataFrame()
-    except Exception as e:
+    except Exception:
         return pd.DataFrame()
 
-# Oturum Durumu Başlatma
 if "logged_in" not in st.session_state:
     st.session_state["logged_in"] = False
 if "user_info" not in st.session_state:
     st.session_state["user_info"] = None
 
-# Giriş / Kayıt Paneli
 if not st.session_state["logged_in"]:
     st.title("🎓 YKS Koçluk & Analiz Paneli")
     tab_login, tab_register = st.tabs(["Giriş Yap", "Kayıt Ol"])
@@ -213,12 +211,8 @@ if not st.session_state["logged_in"]:
                 st.warning("Lütfen tüm alanları doldurun.")
     st.stop()
 
-# ==========================================
-# 3. UYGULAMA İÇERİĞİ (Giriş Yapılmış)
-# ==========================================
 user_id = st.session_state["user_info"]["id"]
 username = st.session_state["user_info"]["username"]
-
 IS_ADMIN = (username.strip().lower() == "ev")
 
 st.sidebar.title(f"👤 Hoş geldin, {username}!")
@@ -250,7 +244,6 @@ tabs = st.tabs(tab_titles)
 # ------------------------------------------
 with tabs[0]:
     st.header("📝 Deneme Kaydı ve Yönetimi")
-    
     sub_tab1, sub_tab2, sub_tab3 = st.tabs(["➕ Yeni Deneme Ekle", "⚙️ Denemeleri Düzenle & Sil", "🖼️ Sınav Görseli / Karne Yükle"])
     
     with sub_tab1:
@@ -397,7 +390,7 @@ with tabs[0]:
             st.success("Yüklendi!")
 
 # ------------------------------------------
-# TAB 2: YANLIŞ DEFTERİ (Fotoğraflı + Hepsi Filtreli)
+# TAB 2: YANLIŞ DEFTERİ (Görsel Gösterme + Tablet Kalemi ile Çözüm)
 # ------------------------------------------
 with tabs[1]:
     st.header("❌ Yanlış Defteri & Soru Bankası")
@@ -412,23 +405,29 @@ with tabs[1]:
         
         y_foto_dosya = st.file_uploader("Sorunun Fotoğrafını Yükle", type=["png", "jpg", "jpeg"], key="yanlis_foto_yukle")
         
-        foto_adi = ""
+        foto_base64 = ""
         if y_foto_dosya is not None:
-            st.image(y_foto_dosya, caption="Yüklenen Soru Görseli", use_container_width=True)
-            foto_adi = y_foto_dosya.name
+            pil_img = Image.open(y_foto_dosya)
+            st.image(pil_img, caption="Yüklenen Soru Görseli", use_container_width=True)
+            
+            # Görseli Base64 Metnine Çevir
+            buffered = io.BytesIO()
+            pil_img.save(buffered, format="PNG")
+            foto_base64 = base64.b64encode(buffered.getvalue()).decode()
         
         if st.button("Yanlış Soruyu Deftere Ekle", type="primary", key="btn_add_yanlis"):
             try:
                 data = {
-                    "user_id": user_id,
+                    "user_id": str(user_id),
                     "ders": y_ders,
                     "konu": y_konu,
                     "notlar": y_not,
                     "tarih": str(datetime.now().date()),
-                    "foto_adi": foto_adi
+                    "foto_adi": foto_base64
                 }
                 supabase.table("yanlis_defteri").insert(data).execute()
-                st.success("Yanlış soru deftere eklendi!")
+                st.success("Yanlış soru deftere başarıyla eklendi!")
+                st.rerun()
             except Exception as e:
                 st.error(f"Hata oluştu: {e}")
 
@@ -454,12 +453,40 @@ with tabs[1]:
                 
             if not df_filtered_y.empty:
                 for index, row in df_filtered_y.iterrows():
-                    with st.expander(f"ID: {row['id']} | {row['ders']} - {row['konu']} ({row['tarih']})"):
+                    with st.expander(f"📌 ID: {row['id']} | {row['ders']} - {row['konu']} ({row['tarih']})"):
                         st.write(f"**Not / Açıklama:** {row['notlar']}")
-                        if "foto_adi" in row and pd.notna(row["foto_adi"]) and row["foto_adi"]:
-                            st.info(f"📁 Eklenen Görsel: {row['foto_adi']}")
+                        
+                        img_bg = None
+                        if "foto_adi" in row and pd.notna(row["foto_adi"]) and len(str(row["foto_adi"])) > 50:
+                            try:
+                                img_data = base64.b64decode(row["foto_adi"])
+                                img_bg = Image.open(io.BytesIO(img_data))
+                                st.image(img_bg, caption="📸 Yüklenen Soru Görseli", use_container_width=True)
+                            except Exception:
+                                st.caption("Görsel yüklenirken bir hata oluştu.")
                         else:
-                            st.caption("Bu soruya görsel eklenmemiş.")
+                            st.caption("Bu soruya henüz görsel yüklenmemiş.")
+                        
+                        # Çizim Tahtası (Tablet Kalemi İle Üzerini Çözebilmek İçin)
+                        st.markdown("### ✍️ Kalemle Çözüm Alanı")
+                        c_col1, c_col2, c_col3 = st.columns(3)
+                        with c_col1:
+                            drawing_mode = st.selectbox("Araç", ["freedraw", "line", "rect", "transform"], key=f"mode_{row['id']}")
+                        with c_col2:
+                            stroke_color = st.color_picker("Kalem Rengi", "#FF0000", key=f"color_{row['id']}")
+                        with c_col3:
+                            stroke_width = st.slider("Kalınlık", 1, 15, 3, key=f"width_{row['id']}")
+                        
+                        st_canvas(
+                            fill_color="rgba(255, 165, 0, 0.3)",
+                            stroke_width=stroke_width,
+                            stroke_color=stroke_color,
+                            background_image=img_bg,
+                            update_streamlit=True,
+                            height=500,
+                            drawing_mode=drawing_mode,
+                            key=f"canvas_{row['id']}",
+                        )
                 
                 st.markdown("---")
                 sil_y_id = st.selectbox("Öğrendiğin veya Sildiğin Soru ID'sini Seç", df_filtered_y["id"].tolist(), key="select_delete_yanlis")
@@ -502,7 +529,7 @@ with tabs[2]:
             st.warning("Seçilen filtrelerde deneme bulunamadı.")
 
 # ------------------------------------------
-# TAB 4: KONU ANALİZİ, PASTA GRAFİĞİ & AKILLI UYARI
+# TAB 4: KONU ANALİZİ & PASTA GRAFİĞİ
 # ------------------------------------------
 with tabs[3]:
     st.header("⚠️ Konu Analizi & Akıllı Uyarı")
@@ -526,7 +553,6 @@ with tabs[3]:
             col_k1, col_k2 = st.columns([2, 1])
             with col_k1:
                 st.plotly_chart(px.bar(sıklık_df, x="Konu", y="Hata Frekansı", color="Hata Frekansı", title="Hata Sayıları (Sütun)", text_auto=True), use_container_width=True)
-                # Pasta Grafiği (Pie Chart) Eklendi
                 st.plotly_chart(px.pie(sıklık_df, names="Konu", values="Hata Frekansı", title="Hata Oranları Dağılımı (Pasta Grafiği)", hole=0.3), use_container_width=True)
             with col_k2:
                 st.dataframe(sıklık_df, use_container_width=True)
@@ -565,7 +591,7 @@ with tabs[4]:
                 st.rerun()
 
 # ------------------------------------------
-# TAB 6: YÖNETİCİ PANELİ (Sadece "Ev" kullanıcısı)
+# TAB 6: YÖNETİCİ PANELİ
 # ------------------------------------------
 if IS_ADMIN:
     with tabs[5]:
