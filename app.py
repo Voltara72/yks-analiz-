@@ -274,8 +274,18 @@ with tabs[0]:
                 toplam_net += d_net
                 with col_konu:
                     d_konular = st.multiselect(f"Hatalı Konular ({d_adi})", options=HAZIR_KONULAR.get(d_adi, []), key=f"k_{d_adi}")
+                
+                # Çoklu yanlış adetlerini almak için
+                hatali_liste_final = []
+                if d_konular:
+                    st.markdown(f"<small>📌 <b>{d_adi}</b> için seçilen konuların yanlış adetleri:</small>", unsafe_allow_html=True)
+                    for konu in d_konular:
+                        adet = st.number_input(f"'{konu}' kaç yanlış?", min_value=1, max_value=max(1, int(d_yanlis)), value=1, key=f"adet_{d_adi}_{konu}")
+                        for _ in range(int(adet)):
+                            hatali_liste_final.append(konu)
+
                 if d_dogru > 0 or d_yanlis > 0 or len(d_konular) > 0:
-                    tyt_kayitlar.append({"ders": d_adi, "dogru": d_dogru, "yanlis": d_yanlis, "net": d_net, "hatali_konular": ", ".join(d_konular) if d_konular else ""})
+                    tyt_kayitlar.append({"ders": d_adi, "dogru": d_dogru, "yanlis": d_yanlis, "net": d_net, "hatali_konular": ", ".join(hatali_liste_final) if hatali_liste_final else ""})
                 st.markdown("<hr style='margin: 5px 0;'>", unsafe_allow_html=True)
                 
             st.metric("Hesaplanan Toplam TYT Neti", f"{toplam_net:.2f}")
@@ -306,8 +316,17 @@ with tabs[0]:
                 toplam_net += d_net
                 with col_konu:
                     d_konular = st.multiselect(f"Hatalı Konular ({d_adi})", options=HAZIR_KONULAR.get(d_adi, []), key=f"k_{d_adi}")
+                
+                hatali_liste_final = []
+                if d_konular:
+                    st.markdown(f"<small>📌 <b>{d_adi}</b> için seçilen konuların yanlış adetleri:</small>", unsafe_allow_html=True)
+                    for konu in d_konular:
+                        adet = st.number_input(f"'{konu}' kaç yanlış?", min_value=1, max_value=max(1, int(d_yanlis)), value=1, key=f"adet_{d_adi}_{konu}")
+                        for _ in range(int(adet)):
+                            hatali_liste_final.append(konu)
+
                 if d_dogru > 0 or d_yanlis > 0 or len(d_konular) > 0:
-                    ayt_kayitlar.append({"ders": d_adi, "dogru": d_dogru, "yanlis": d_yanlis, "net": d_net, "hatali_konular": ", ".join(d_konular) if d_konular else ""})
+                    ayt_kayitlar.append({"ders": d_adi, "dogru": d_dogru, "yanlis": d_yanlis, "net": d_net, "hatali_konular": ", ".join(hatali_liste_final) if hatali_liste_final else ""})
                 st.markdown("<hr style='margin: 5px 0;'>", unsafe_allow_html=True)
                 
             st.metric("Hesaplanan Toplam AYT Neti", f"{toplam_net:.2f}")
@@ -335,9 +354,17 @@ with tabs[0]:
                 b_konular = st.multiselect("Hatalı Konular", options=HAZIR_KONULAR.get(b_ders, []), key="brans_konu_select")
                 b_ek_konu = st.text_input("Diğer / Manuel Konular (Virgülle ayırın)", key="brans_ek_konu")
 
+            hatali_liste_final = []
+            if b_konular:
+                st.markdown(f"<small>📌 Seçilen konuların yanlış adetleri:</small>", unsafe_allow_html=True)
+                for konu in b_konular:
+                    adet = st.number_input(f"'{konu}' kaç yanlış?", min_value=1, max_value=max(1, int(b_yanlis)), value=1, key=f"adet_brans_{konu}")
+                    for _ in range(int(adet)):
+                        hatali_liste_final.append(konu)
+
             if st.button("Branş Denemesini Kaydet", use_container_width=True, type="primary"):
                 try:
-                    tum_k = list(b_konular)
+                    tum_k = list(hatali_liste_final)
                     if b_ek_konu.strip():
                         tum_k.extend([k.strip() for k in b_ek_konu.split(",") if k.strip()])
                     hatali_str = ", ".join(tum_k)
@@ -390,7 +417,7 @@ with tabs[0]:
             st.success("Yüklendi!")
 
 # ------------------------------------------
-# TAB 2: YANLIŞ DEFTERİ (Tam Ekran Tuval + Geri Al / Temizle Butonları)
+# TAB 2: YANLIŞ DEFTERİ
 # ------------------------------------------
 with tabs[1]:
     st.header("❌ Yanlış Defteri & Soru Bankası")
@@ -468,7 +495,6 @@ with tabs[1]:
                         
                         st.markdown("### ✍️ Tam Ekran Çözüm Alanı")
                         
-                        # Kontrol Paneli: Renk, Kalınlık ve Geri Al / Temizleme Araçları
                         c1, c2, c3 = st.columns(3)
                         with c1:
                             stroke_color = st.color_picker("Kalem Rengi", "#FF0000", key=f"color_{row['id']}")
@@ -477,9 +503,8 @@ with tabs[1]:
                         with c3:
                             drawing_mode = st.selectbox("Çizim Aracı", ["freedraw", "line", "rect"], key=f"mode_{row['id']}")
                         
-                        st.markdown("💡 *Not: Yaptığın son çizgiyi silmek için tuvalin üstündeki araç çubuğundaki **Geri Al (Undo)** butonuna basabilir veya tamamen temizleyebilirsin.*")
+                        st.markdown("💡 *Not: Yaptığın son çizgiyi silmek için tuvalin üstündeki araç çubuğundaki Geri Al (Undo) butonuna basabilir veya tamamen temizleyebilirsin.*")
                         
-                        # Geniş / Neredeyse Tam Ekran Tuval (Yükseklik 850 piksel)
                         st_canvas(
                             fill_color="rgba(255, 165, 0, 0.3)",
                             stroke_width=stroke_width,
