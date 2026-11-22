@@ -637,17 +637,21 @@ with tabs[1]:
                 st.warning("Seçilen kriterlere uygun yanlış soru bulunamadı.")
 
 # ------------------------------------------
-# TAB 3: KONU TAKİP ÇİZELGESİ (TÜM DERSLER TEK SAYFADA)
+# TAB 3: KONU TAKİP ÇİZELGESİ (ÇENTİKLİ AÇ/KAPA + TÜM DERSLER TEK SAYFADA)
 # ------------------------------------------
 with tabs[2]:
     st.header("✅ YKS Dijital Konu Takip Çizelgesi")
-    st.write("Tüm dersler tek sayfada alt alta listelenir. Her konu için **Bitmedi**, **Tekrar Lazım** veya **Bitti** butonuna bas; yüzdeler anlık güncellenir.")
+    st.write("Ders başındaki çentiğe (`▾` / `▸`) basarak listeyi açıp kapatabilirsin. Her konu için **Bitmedi**, **Tekrar Lazım** veya **Bitti** butonuna bas.")
 
     if "konu_durum_map" not in st.session_state or st.session_state.get("loaded_user_id") != user_id:
         st.session_state["konu_durum_map"] = get_konu_durumlari(user_id)
         st.session_state["loaded_user_id"] = user_id
 
+    if "ders_acik_state" not in st.session_state:
+        st.session_state["ders_acik_state"] = {ders: (ders == "TYT Türkçe") for ders in TUM_TAKIP_DERSLERI}
+
     durum_map = st.session_state["konu_durum_map"]
+    ders_acik_state = st.session_state["ders_acik_state"]
 
     tum_tyt_sayisi = sum(len(v) for v in TYT_KONU_TAKIP.values())
     tum_ayt_sayisi = sum(len(v) for v in AYT_SAYISAL_KONU_TAKIP.values())
@@ -669,18 +673,27 @@ with tabs[2]:
         st.progress(min(max(ayt_oran_float / 100.0, 0.0), 1.0))
 
     st.markdown("---")
-    ders_filtre = st.selectbox("İstersen Tek Derse Odaklan (Ya da Tüm Dersler Tek Sayfada kalsın)", ["Tüm Dersler"] + list(TUM_TAKIP_DERSLERI.keys()), key="tek_sayfa_ders_filtre")
 
-    gosterilecek_dersler = TUM_TAKIP_DERSLERI if ders_filtre == "Tüm Dersler" else {ders_filtre: TUM_TAKIP_DERSLERI[ders_filtre]}
-
-    for ders_adi, konular in gosterilecek_dersler.items():
+    for ders_adi, konular in TUM_TAKIP_DERSLERI.items():
         ders_biten = sum(1 for k in konular if durum_map.get(f"{ders_adi}::{k}") == "Bitti")
         ders_tekrar = sum(1 for k in konular if durum_map.get(f"{ders_adi}::{k}") == "Tekrar Lazım")
         ders_yuzde = (ders_biten / len(konular)) * 100 if len(konular) > 0 else 0.0
-        st.subheader(f"📌 {ders_adi} — %{ders_yuzde:.1f} Bitti ({ders_biten}/{len(konular)}) | Tekrar Lazım: {ders_tekrar}")
-        konu_secici_render(ders_adi, konular, durum_map, "all")
-        st.markdown("---")
+        acik_mi = ders_acik_state.get(ders_adi, False)
+        centik = "▾" if acik_mi else "▸"
 
+        if st.button(
+            f"{centik} {ders_adi} — %{ders_yuzde:.1f} Bitti ({ders_biten}/{len(konular)}) | Tekrar: {ders_tekrar}",
+            key=f"centik_btn_{ders_adi}",
+            type="primary" if acik_mi else "secondary",
+            use_container_width=True
+        ):
+            ders_acik_state[ders_adi] = not acik_mi
+            st.rerun()
+
+        if acik_mi:
+            konu_secici_render(ders_adi, konular, durum_map, "all")
+
+    st.markdown("---")
     if st.button("💾 Konu Durumlarını Kaydet", type="primary", use_container_width=True, key="btn_save_konu_takip"):
         if save_konu_durumlari(user_id, durum_map):
             st.success("✅ Tüm konu durumları (Bitmedi / Tekrar Lazım / Bitti) başarıyla kaydedildi!")
