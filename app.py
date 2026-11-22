@@ -583,17 +583,23 @@ with tabs[1]:
 # ------------------------------------------
 with tabs[2]:
     st.header("✅ YKS Dijital Konu Takip Çizelgesi")
-    st.write("Her konu için **Bitti**, **Tekrar Lazım** veya **Bitmedi** durumunu seç; yüzdeler anlık hesaplanır ve açık ders kutucukları kapanmaz.")
+    st.write("Ders kutucuğunu aç/kapat; her konu için **Bitti**, **Tekrar Lazım** veya **Bitmedi** durumunu seç. Yüzdeler anlık hesaplanır.")
 
     if "konu_durum_map" not in st.session_state or st.session_state.get("loaded_user_id") != user_id:
         st.session_state["konu_durum_map"] = get_konu_durumlari(user_id)
         st.session_state["loaded_user_id"] = user_id
 
-    if "expander_acik_durumu" not in st.session_state:
-        st.session_state["expander_acik_durumu"] = {}
+    for ders_adi in TYT_KONU_TAKIP:
+        exp_key = f"exp_tyt_{ders_adi}"
+        if exp_key not in st.session_state:
+            st.session_state[exp_key] = False
+
+    for ders_adi in AYT_SAYISAL_KONU_TAKIP:
+        exp_key = f"exp_ayt_{ders_adi}"
+        if exp_key not in st.session_state:
+            st.session_state[exp_key] = True
 
     mevcut_durumlar = st.session_state["konu_durum_map"]
-    expander_durum = st.session_state["expander_acik_durumu"]
 
     # Anlık seçimleri yakala (widget key'leri üzerinden)
     aktif_durumlar = dict(mevcut_durumlar)
@@ -634,9 +640,7 @@ with tabs[2]:
             ders_tekrar = sum(1 for k in konular if aktif_durumlar.get(f"{ders_adi}::{k}") == "Tekrar Lazım")
             ders_yuzde = (ders_biten / len(konular)) * 100 if len(konular) > 0 else 0.0
             exp_key = f"exp_tyt_{ders_adi}"
-            varsayilan_acik = expander_durum.get(exp_key, False)
-            acik_mi = st.checkbox(f"📂 {ders_adi} — %{ders_yuzde:.1f} Bitti ({ders_biten}/{len(konular)}) | Tekrar: {ders_tekrar}", value=varsayilan_acik, key=exp_key)
-            expander_durum[exp_key] = acik_mi
+            acik_mi = st.checkbox(f"📂 {ders_adi} — %{ders_yuzde:.1f} Bitti ({ders_biten}/{len(konular)}) | Tekrar: {ders_tekrar}", key=exp_key)
             if acik_mi:
                 with st.container(border=True):
                     cols = st.columns(2)
@@ -660,9 +664,7 @@ with tabs[2]:
             ders_tekrar = sum(1 for k in konular if aktif_durumlar.get(f"{ders_adi}::{k}") == "Tekrar Lazım")
             ders_yuzde = (ders_biten / len(konular)) * 100 if len(konular) > 0 else 0.0
             exp_key = f"exp_ayt_{ders_adi}"
-            varsayilan_acik = expander_durum.get(exp_key, True)
-            acik_mi = st.checkbox(f"📂 {ders_adi} — %{ders_yuzde:.1f} Bitti ({ders_biten}/{len(konular)}) | Tekrar: {ders_tekrar}", value=varsayilan_acik, key=exp_key)
-            expander_durum[exp_key] = acik_mi
+            acik_mi = st.checkbox(f"📂 {ders_adi} — %{ders_yuzde:.1f} Bitti ({ders_biten}/{len(konular)}) | Tekrar: {ders_tekrar}", key=exp_key)
             if acik_mi:
                 with st.container(border=True):
                     cols = st.columns(2)
