@@ -126,6 +126,8 @@ AYT_SAYISAL_KONU_TAKIP = {
     "AYT Biyoloji": HAZIR_KONULAR["AYT Biyoloji"]
 }
 
+KONU_DURUMLARI = ["Bitmedi", "Tekrar Lazım", "Bitti"]
+
 # ==========================================
 # 2. VERİTABANI VE OTURUM YÖNETİMİ
 # ==========================================
@@ -184,19 +186,35 @@ def get_hatirlaticilar(user_id):
     except Exception:
         return pd.DataFrame()
 
-def get_tamamlanan_konular(user_id):
+def get_konu_durumlari(user_id):
+    durum_map = {}
     try:
         res = supabase.table("konu_takip").select("*").eq("user_id", str(user_id)).execute()
         if res.data and res.data[0].get("tamamlanan_konular"):
             raw = res.data[0]["tamamlanan_konular"]
-            return set([x.strip() for x in raw.split("||") if x.strip()])
-        return set()
+            for parca in raw.split("||"):
+                parca = parca.strip()
+                if not parca:
+                    continue
+                if ":::" in parca:
+                    anahtar, durum = parca.split(":::", 1)
+                    if durum in KONU_DURUMLARI:
+                        durum_map[anahtar.strip()] = durum
+                else:
+                    # Eski format uyumluluğu
+                    durum_map[parca] = "Bitti"
+        return durum_map
     except Exception:
-        return set()
+        return durum_map
 
-def save_tamamlanan_konular(user_id, konu_seti):
+def save_konu_durumlari(user_id, durum_map):
     try:
-        joined_str = "||".join(sorted(list(konu_seti)))
+        kayit_listesi = [
+            f"{anahtar}:::{durum}"
+            for anahtar, durum in sorted(durum_map.items())
+            if durum in ("Bitti", "Tekrar Lazım")
+        ]
+        joined_str = "||".join(kayit_listesi)
         check = supabase.table("konu_takip").select("id").eq("user_id", str(user_id)).execute()
         if check.data:
             supabase.table("konu_takip").update({"tamamlanan_konular": joined_str}).eq("user_id", str(user_id)).execute()
@@ -562,33 +580,36 @@ with tabs[1]:
                 st.warning("Seçilen kriterlere uygun yanlış soru bulunamadı.")
 
 # ------------------------------------------
-# TAB 3: KONU TAKİP ÇİZELGESİ (TYT TÜM DERSLER & AYT SAYISAL)
+# TAB 3: KONU TAKİP ÇİZELGESİ (BITTI / TEKRAR LAZIM / BITMEDI)
 # ------------------------------------------
 with tabs[2]:
     st.header("✅ YKS Dijital Konu Takip Çizelgesi")
-    st.write("Bitirdiğin konuların kutucuğuna tik at ve alttaki kaydet butonuna basarak ilerlemeni kalıcı hale getir.")
+    st.write("Her konu için **Bitti**, **Tekrar Lazım** veya **Bitmedi** durumunu seç ve alttaki kaydet butonuna bas.")
 
-    if "tamamlanan_konular_set" not in st.session_state or st.session_state.get("loaded_user_id") != user_id:
-        st.session_state["tamamlanan_konular_set"] = get_tamamlanan_konular(user_id)
+    if "konu_durum_map" not in st.session_state or st.session_state.get("loaded_user_id") != user_id:
+        st.session_state["konu_durum_map"] = get_konu_durumlari(user_id)
         st.session_state["loaded_user_id"] = user_id
 
-    mevcut_set = st.session_state["tamamlanan_konular_set"]
-    yeni_secimler = set()
+    mevcut_durumlar = st.session_state["konu_durum_map"]
+    yeni_durumlar = {}
 
     tum_tyt_sayisi = sum(len(v) for v in TYT_KONU_TAKIP.values())
     tum_ayt_sayisi = sum(len(v) for v in AYT_SAYISAL_KONU_TAKIP.values())
 
-    biten_tyt = sum(1 for d, k_list in TYT_KONU_TAKIP.items() for k in k_list if f"{d}::{k}" in mevcut_set)
-    biten_ayt = sum(1 for d, k_list in AYT_SAYISAL_KONU_TAKIP.items() for k in k_list if f"{d}::{k}" in mevcut_set)
+    biten_tyt = sum(1 for d, k_list in TYT_KONU_TAKIP.items() for k in k_list if mevcut_durumlar.get(f"{d}::{k}") == "Bitti")
+    tekrar_tyt = sum(1 for d, k_list in TYT_KONU_TAKIP.items() for k in k_list if mevcut_durumlar.get(f"{d}::{k}") == "Tekrar Lazım")
+
+    biten_ayt = sum(1 for d, k_list in AYT_SAYISAL_KONU_TAKIP.items() for k in k_list if mevcut_durumlar.get(f"{d}::{k}") == "Bitti")
+    tekrar_ayt = sum(1 for d, k_list in AYT_SAYISAL_KONU_TAKIP.items() for k in k_list if mevcut_durumlar.get(f"{d}::{k}") == "Tekrar Lazım")
 
     m_col1, m_col2 = st.columns(2)
     with m_col1:
         tyt_oran = int((biten_tyt / tum_tyt_sayisi) * 100) if tum_tyt_sayisi > 0 else 0
-        st.metric("📘 TYT Genel İlerleme", f"%{tyt_oran} ({biten_tyt}/{tum_tyt_sayisi} Konu)")
+        st.metric("📘 TYT Bitti Oranı", f"%{tyt_oran} ({biten_tyt}/{tum_tyt_sayisi})", delta=f"Tekrar Lazım: {tekrar_tyt}")
         st.progress(tyt_oran / 100)
     with m_col2:
         ayt_oran = int((biten_ayt / tum_ayt_sayisi) * 100) if tum_ayt_sayisi > 0 else 0
-        st.metric("📗 AYT Sayısal Genel İlerleme", f"%{ayt_oran} ({biten_ayt}/{tum_ayt_sayisi} Konu)")
+        st.metric("📗 AYT Sayısal Bitti Oranı", f"%{ayt_oran} ({biten_ayt}/{tum_ayt_sayisi})", delta=f"Tekrar Lazım: {tekrar_ayt}")
         st.progress(ayt_oran / 100)
 
     st.markdown("---")
@@ -597,36 +618,52 @@ with tabs[2]:
     with tab_tyt_takip:
         st.subheader("📘 TYT Tüm Dersler Konu Listesi")
         for ders_adi, konular in TYT_KONU_TAKIP.items():
-            ders_biten = sum(1 for k in konular if f"{ders_adi}::{k}" in mevcut_set)
+            ders_biten = sum(1 for k in konular if mevcut_durumlar.get(f"{ders_adi}::{k}") == "Bitti")
+            ders_tekrar = sum(1 for k in konular if mevcut_durumlar.get(f"{ders_adi}::{k}") == "Tekrar Lazım")
             ders_yuzde = int((ders_biten / len(konular)) * 100)
-            with st.expander(f"📌 {ders_adi} — %{ders_yuzde} Tamamlandı ({ders_biten}/{len(konular)})", expanded=False):
-                cols = st.columns(3)
+            with st.expander(f"📌 {ders_adi} — %{ders_yuzde} Bitti ({ders_biten}/{len(konular)}) | Tekrar: {ders_tekrar}", expanded=False):
+                cols = st.columns(2)
                 for idx, konu in enumerate(konular):
                     anahtar = f"{ders_adi}::{konu}"
-                    with cols[idx % 3]:
-                        checked = st.checkbox(konu, value=(anahtar in mevcut_set), key=f"chk_tyt_{anahtar}")
-                        if checked:
-                            yeni_secimler.add(anahtar)
+                    onceki_durum = mevcut_durumlar.get(anahtar, "Bitmedi")
+                    varsayilan_idx = KONU_DURUMLARI.index(onceki_durum) if onceki_durum in KONU_DURUMLARI else 0
+                    with cols[idx % 2]:
+                        secilen_durum = st.radio(
+                            konu,
+                            options=KONU_DURUMLARI,
+                            index=varsayilan_idx,
+                            horizontal=True,
+                            key=f"rad_tyt_{anahtar}"
+                        )
+                        yeni_durumlar[anahtar] = secilen_durum
 
     with tab_ayt_takip:
         st.subheader("📗 AYT Sayısal Dersler Konu Listesi")
         for ders_adi, konular in AYT_SAYISAL_KONU_TAKIP.items():
-            ders_biten = sum(1 for k in konular if f"{ders_adi}::{k}" in mevcut_set)
+            ders_biten = sum(1 for k in konular if mevcut_durumlar.get(f"{ders_adi}::{k}") == "Bitti")
+            ders_tekrar = sum(1 for k in konular if mevcut_durumlar.get(f"{ders_adi}::{k}") == "Tekrar Lazım")
             ders_yuzde = int((ders_biten / len(konular)) * 100)
-            with st.expander(f"📌 {ders_adi} — %{ders_yuzde} Tamamlandı ({ders_biten}/{len(konular)})", expanded=True):
-                cols = st.columns(3)
+            with st.expander(f"📌 {ders_adi} — %{ders_yuzde} Bitti ({ders_biten}/{len(konular)}) | Tekrar: {ders_tekrar}", expanded=True):
+                cols = st.columns(2)
                 for idx, konu in enumerate(konular):
                     anahtar = f"{ders_adi}::{konu}"
-                    with cols[idx % 3]:
-                        checked = st.checkbox(konu, value=(anahtar in mevcut_set), key=f"chk_ayt_{anahtar}")
-                        if checked:
-                            yeni_secimler.add(anahtar)
+                    onceki_durum = mevcut_durumlar.get(anahtar, "Bitmedi")
+                    varsayilan_idx = KONU_DURUMLARI.index(onceki_durum) if onceki_durum in KONU_DURUMLARI else 0
+                    with cols[idx % 2]:
+                        secilen_durum = st.radio(
+                            konu,
+                            options=KONU_DURUMLARI,
+                            index=varsayilan_idx,
+                            horizontal=True,
+                            key=f"rad_ayt_{anahtar}"
+                        )
+                        yeni_durumlar[anahtar] = secilen_durum
 
     st.markdown("---")
-    if st.button("💾 Konu İlerlemelerini Kaydet", type="primary", use_container_width=True, key="btn_save_konu_takip"):
-        st.session_state["tamamlanan_konular_set"] = yeni_secimler
-        if save_tamamlanan_konular(user_id, yeni_secimler):
-            st.success("✅ Tüm işaretlediğin konular başarıyla veritabanına kaydedildi!")
+    if st.button("💾 Konu Durumlarını Kaydet", type="primary", use_container_width=True, key="btn_save_konu_takip"):
+        st.session_state["konu_durum_map"] = yeni_durumlar
+        if save_konu_durumlari(user_id, yeni_durumlar):
+            st.success("✅ Tüm konu durumları (Bitti / Tekrar Lazım / Bitmedi) başarıyla kaydedildi!")
             st.rerun()
         else:
             st.warning("⚠️ İlerleme oturuma kaydedildi ancak Supabase'de 'konu_takip' tablosu bulunamadı. Lütfen SQL komutunu çalıştırdığından emin ol.")
