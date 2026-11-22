@@ -115,6 +115,17 @@ HAZIR_KONULAR = {
 
 DERS_LISTESI = list(HAZIR_KONULAR.keys())
 
+TYT_KONU_TAKIP = {
+    k: v for k, v in HAZIR_KONULAR.items() if k.startswith("TYT")
+}
+
+AYT_SAYISAL_KONU_TAKIP = {
+    "AYT Matematik": HAZIR_KONULAR["AYT Matematik"],
+    "AYT Fizik": HAZIR_KONULAR["AYT Fizik"],
+    "AYT Kimya": HAZIR_KONULAR["AYT Kimya"],
+    "AYT Biyoloji": HAZIR_KONULAR["AYT Biyoloji"]
+}
+
 # ==========================================
 # 2. VERİTABANI VE OTURUM YÖNETİMİ
 # ==========================================
@@ -173,6 +184,28 @@ def get_hatirlaticilar(user_id):
     except Exception:
         return pd.DataFrame()
 
+def get_tamamlanan_konular(user_id):
+    try:
+        res = supabase.table("konu_takip").select("*").eq("user_id", str(user_id)).execute()
+        if res.data and res.data[0].get("tamamlanan_konular"):
+            raw = res.data[0]["tamamlanan_konular"]
+            return set([x.strip() for x in raw.split("||") if x.strip()])
+        return set()
+    except Exception:
+        return set()
+
+def save_tamamlanan_konular(user_id, konu_seti):
+    try:
+        joined_str = "||".join(sorted(list(konu_seti)))
+        check = supabase.table("konu_takip").select("id").eq("user_id", str(user_id)).execute()
+        if check.data:
+            supabase.table("konu_takip").update({"tamamlanan_konular": joined_str}).eq("user_id", str(user_id)).execute()
+        else:
+            supabase.table("konu_takip").insert({"user_id": str(user_id), "tamamlanan_konular": joined_str}).execute()
+        return True
+    except Exception:
+        return False
+
 if "logged_in" not in st.session_state:
     st.session_state["logged_in"] = False
 if "user_info" not in st.session_state:
@@ -229,6 +262,7 @@ st.title("📈 YKS Detaylı Analiz & Takip Sistemi")
 tab_titles = [
     "📝 Deneme Ekle & Yönet", 
     "❌ Yanlış Defteri", 
+    "✅ Konu Takip Çizelgesi",
     "📊 Genel Net Grafikleri", 
     "⚠️ Konu Analizi & Akıllı Uyarı", 
     "🔔 Hatırlatıcılar & Bildirim"
@@ -275,7 +309,6 @@ with tabs[0]:
                 with col_konu:
                     d_konular = st.multiselect(f"Hatalı Konular ({d_adi})", options=HAZIR_KONULAR.get(d_adi, []), key=f"k_{d_adi}")
                 
-                # Çoklu yanlış adetlerini almak için
                 hatali_liste_final = []
                 if d_konular:
                     st.markdown(f"<small>📌 <b>{d_adi}</b> için seçilen konuların yanlış adetleri:</small>", unsafe_allow_html=True)
@@ -529,9 +562,79 @@ with tabs[1]:
                 st.warning("Seçilen kriterlere uygun yanlış soru bulunamadı.")
 
 # ------------------------------------------
-# TAB 3: GENEL NET GRAFİKLERİ
+# TAB 3: KONU TAKİP ÇİZELGESİ (TYT TÜM DERSLER & AYT SAYISAL)
 # ------------------------------------------
 with tabs[2]:
+    st.header("✅ YKS Dijital Konu Takip Çizelgesi")
+    st.write("Bitirdiğin konuların kutucuğuna tik at ve alttaki kaydet butonuna basarak ilerlemeni kalıcı hale getir.")
+
+    if "tamamlanan_konular_set" not in st.session_state or st.session_state.get("loaded_user_id") != user_id:
+        st.session_state["tamamlanan_konular_set"] = get_tamamlanan_konular(user_id)
+        st.session_state["loaded_user_id"] = user_id
+
+    mevcut_set = st.session_state["tamamlanan_konular_set"]
+    yeni_secimler = set()
+
+    tum_tyt_sayisi = sum(len(v) for v in TYT_KONU_TAKIP.values())
+    tum_ayt_sayisi = sum(len(v) for v in AYT_SAYISAL_KONU_TAKIP.values())
+
+    biten_tyt = sum(1 for d, k_list in TYT_KONU_TAKIP.items() for k in k_list if f"{d}::{k}" in mevcut_set)
+    biten_ayt = sum(1 for d, k_list in AYT_SAYISAL_KONU_TAKIP.items() for k in k_list if f"{d}::{k}" in mevcut_set)
+
+    m_col1, m_col2 = st.columns(2)
+    with m_col1:
+        tyt_oran = int((biten_tyt / tum_tyt_sayisi) * 100) if tum_tyt_sayisi > 0 else 0
+        st.metric("📘 TYT Genel İlerleme", f"%{tyt_oran} ({biten_tyt}/{tum_tyt_sayisi} Konu)")
+        st.progress(tyt_oran / 100)
+    with m_col2:
+        ayt_oran = int((biten_ayt / tum_ayt_sayisi) * 100) if tum_ayt_sayisi > 0 else 0
+        st.metric("📗 AYT Sayısal Genel İlerleme", f"%{ayt_oran} ({biten_ayt}/{tum_ayt_sayisi} Konu)")
+        st.progress(ayt_oran / 100)
+
+    st.markdown("---")
+    tab_tyt_takip, tab_ayt_takip = st.tabs(["📘 TYT Konuları (Tüm Dersler)", "📗 AYT Konuları (Sayısal: Mat - Fiz - Kim - Biyo)"])
+
+    with tab_tyt_takip:
+        st.subheader("📘 TYT Tüm Dersler Konu Listesi")
+        for ders_adi, konular in TYT_KONU_TAKIP.items():
+            ders_biten = sum(1 for k in konular if f"{ders_adi}::{k}" in mevcut_set)
+            ders_yuzde = int((ders_biten / len(konular)) * 100)
+            with st.expander(f"📌 {ders_adi} — %{ders_yuzde} Tamamlandı ({ders_biten}/{len(konular)})", expanded=False):
+                cols = st.columns(3)
+                for idx, konu in enumerate(konular):
+                    anahtar = f"{ders_adi}::{konu}"
+                    with cols[idx % 3]:
+                        checked = st.checkbox(konu, value=(anahtar in mevcut_set), key=f"chk_tyt_{anahtar}")
+                        if checked:
+                            yeni_secimler.add(anahtar)
+
+    with tab_ayt_takip:
+        st.subheader("📗 AYT Sayısal Dersler Konu Listesi")
+        for ders_adi, konular in AYT_SAYISAL_KONU_TAKIP.items():
+            ders_biten = sum(1 for k in konular if f"{ders_adi}::{k}" in mevcut_set)
+            ders_yuzde = int((ders_biten / len(konular)) * 100)
+            with st.expander(f"📌 {ders_adi} — %{ders_yuzde} Tamamlandı ({ders_biten}/{len(konular)})", expanded=True):
+                cols = st.columns(3)
+                for idx, konu in enumerate(konular):
+                    anahtar = f"{ders_adi}::{konu}"
+                    with cols[idx % 3]:
+                        checked = st.checkbox(konu, value=(anahtar in mevcut_set), key=f"chk_ayt_{anahtar}")
+                        if checked:
+                            yeni_secimler.add(anahtar)
+
+    st.markdown("---")
+    if st.button("💾 Konu İlerlemelerini Kaydet", type="primary", use_container_width=True, key="btn_save_konu_takip"):
+        st.session_state["tamamlanan_konular_set"] = yeni_secimler
+        if save_tamamlanan_konular(user_id, yeni_secimler):
+            st.success("✅ Tüm işaretlediğin konular başarıyla veritabanına kaydedildi!")
+            st.rerun()
+        else:
+            st.warning("⚠️ İlerleme oturuma kaydedildi ancak Supabase'de 'konu_takip' tablosu bulunamadı. Lütfen SQL komutunu çalıştırdığından emin ol.")
+
+# ------------------------------------------
+# TAB 4: GENEL NET GRAFİKLERİ
+# ------------------------------------------
+with tabs[3]:
     st.header("📊 Net Gelişim Grafikleri")
     df_denemeler = get_denemeler(user_id)
     if df_denemeler.empty:
@@ -557,9 +660,9 @@ with tabs[2]:
             st.warning("Seçilen filtrelerde deneme bulunamadı.")
 
 # ------------------------------------------
-# TAB 4: KONU ANALİZİ & PASTA GRAFİĞİ
+# TAB 5: KONU ANALİZİ & PASTA GRAFİĞİ
 # ------------------------------------------
-with tabs[3]:
+with tabs[4]:
     st.header("⚠️ Konu Analizi & Akıllı Uyarı")
     df_denemeler = get_denemeler(user_id)
     if df_denemeler.empty:
@@ -594,9 +697,9 @@ with tabs[3]:
             st.success("Hatalı konu kaydı bulunmuyor.")
 
 # ------------------------------------------
-# TAB 5: HATIRLATICILAR
+# TAB 6: HATIRLATICILAR
 # ------------------------------------------
-with tabs[4]:
+with tabs[5]:
     st.header("🔔 Çalışma Hatırlatıcıları")
     col_h1, col_h2 = st.columns(2)
     with col_h1:
@@ -619,10 +722,10 @@ with tabs[4]:
                 st.rerun()
 
 # ------------------------------------------
-# TAB 6: YÖNETİCİ PANELİ
+# TAB 7: YÖNETİCİ PANELİ
 # ------------------------------------------
 if IS_ADMIN:
-    with tabs[5]:
+    with tabs[6]:
         st.header("👑 Yönetici Paneli")
         df_users = get_all_users()
         df_all_denemeler = get_denemeler()
