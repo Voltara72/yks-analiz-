@@ -31,6 +31,32 @@ def akilli_uyari_gonder(mesaj: str) -> bool:
 
 st.set_page_config(page_title="YKS Detaylı Analiz & Koçluk Paneli", layout="wide")
 
+st.markdown("""
+<style>
+div[data-testid="stHorizontalBlock"] button[kind="secondary"],
+div[data-testid="stHorizontalBlock"] button[kind="primary"] {
+    min-height: 46px !important;
+    border-radius: 12px !important;
+    font-weight: 700 !important;
+    font-size: 0.92rem !important;
+    transition: all 0.16s ease-in-out !important;
+}
+.konu-karti-satir {
+    background: rgba(99, 102, 241, 0.06);
+    border: 1px solid rgba(129, 140, 248, 0.25);
+    border-radius: 14px;
+    padding: 12px 14px 8px 14px;
+    margin-bottom: 10px;
+}
+.konu-baslik-metni {
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: #e2e8f0;
+}
+</style>
+""", unsafe_allow_html=True)
+
 # ==========================================
 # DERS DERS YKS KONU LİSTESİ
 # ==========================================
@@ -222,6 +248,36 @@ def save_konu_durumlari(user_id, durum_map):
         return True
     except Exception:
         return False
+
+def konu_secici_render(ders_adi, konular, durum_map, prefix):
+    st.markdown('<div class="konu-karti-satir">', unsafe_allow_html=True)
+    for konu in konular:
+        anahtar = f"{ders_adi}::{konu}"
+        aktif_durum = durum_map.get(anahtar, "Bitmedi")
+        st.markdown(f'<div class="konu-baslik-metni">🔹 {konu}</div>', unsafe_allow_html=True)
+        c1, c2, c3 = st.columns(3)
+
+        secenekler = [
+            ("Bitmedi", "Bitmedi", c1),
+            ("Tekrar Lazım", "Tekrar Lazım", c2),
+            ("Bitti", "Bitti", c3),
+        ]
+
+        for durum_degeri, etiket, kolon in secenekler:
+            secili_mi = (aktif_durum == durum_degeri)
+            btn_etiket = f"✓ {etiket}" if secili_mi else etiket
+            btn_tip = "primary" if secili_mi else "secondary"
+            with kolon:
+                if st.button(
+                    btn_etiket,
+                    key=f"btn_{prefix}_{anahtar}_{durum_degeri}",
+                    type=btn_tip,
+                    use_container_width=True
+                ):
+                    durum_map[anahtar] = durum_degeri
+                    st.rerun()
+        st.markdown("<hr style='margin: 8px 0 10px 0; opacity: 0.2;'>", unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
 if "logged_in" not in st.session_state:
     st.session_state["logged_in"] = False
@@ -583,32 +639,22 @@ with tabs[1]:
 # ------------------------------------------
 with tabs[2]:
     st.header("✅ YKS Dijital Konu Takip Çizelgesi")
-    st.write("Dersi seç, her konu için **Bitmedi**, **Tekrar Lazım** veya **Bitti** durumunu işaretle. Yüzdeler anlık hesaplanır.")
+    st.write("Dersi seç, büyük buton kutulardan **Bitmedi**, **Tekrar Lazım** veya **Bitti** durumunu işaretle. Seçtiğinde **✓** işareti çıkar ve yüzdeler anlık hesaplanır.")
 
     if "konu_durum_map" not in st.session_state or st.session_state.get("loaded_user_id") != user_id:
         st.session_state["konu_durum_map"] = get_konu_durumlari(user_id)
         st.session_state["loaded_user_id"] = user_id
 
-    mevcut_durumlar = st.session_state["konu_durum_map"]
-
-    # Anlık seçimleri yakala (widget key'leri üzerinden)
-    aktif_durumlar = dict(mevcut_durumlar)
-    for prefix, kaynak_sozluk in [("rad_tyt", TYT_KONU_TAKIP), ("rad_ayt", AYT_SAYISAL_KONU_TAKIP)]:
-        for d_adi, k_list in kaynak_sozluk.items():
-            for k in k_list:
-                anahtar = f"{d_adi}::{k}"
-                w_key = f"{prefix}_{anahtar}"
-                if w_key in st.session_state:
-                    aktif_durumlar[anahtar] = st.session_state[w_key]
+    durum_map = st.session_state["konu_durum_map"]
 
     tum_tyt_sayisi = sum(len(v) for v in TYT_KONU_TAKIP.values())
     tum_ayt_sayisi = sum(len(v) for v in AYT_SAYISAL_KONU_TAKIP.values())
 
-    biten_tyt = sum(1 for d, k_list in TYT_KONU_TAKIP.items() for k in k_list if aktif_durumlar.get(f"{d}::{k}") == "Bitti")
-    tekrar_tyt = sum(1 for d, k_list in TYT_KONU_TAKIP.items() for k in k_list if aktif_durumlar.get(f"{d}::{k}") == "Tekrar Lazım")
+    biten_tyt = sum(1 for d, k_list in TYT_KONU_TAKIP.items() for k in k_list if durum_map.get(f"{d}::{k}") == "Bitti")
+    tekrar_tyt = sum(1 for d, k_list in TYT_KONU_TAKIP.items() for k in k_list if durum_map.get(f"{d}::{k}") == "Tekrar Lazım")
 
-    biten_ayt = sum(1 for d, k_list in AYT_SAYISAL_KONU_TAKIP.items() for k in k_list if aktif_durumlar.get(f"{d}::{k}") == "Bitti")
-    tekrar_ayt = sum(1 for d, k_list in AYT_SAYISAL_KONU_TAKIP.items() for k in k_list if aktif_durumlar.get(f"{d}::{k}") == "Tekrar Lazım")
+    biten_ayt = sum(1 for d, k_list in AYT_SAYISAL_KONU_TAKIP.items() for k in k_list if durum_map.get(f"{d}::{k}") == "Bitti")
+    tekrar_ayt = sum(1 for d, k_list in AYT_SAYISAL_KONU_TAKIP.items() for k in k_list if durum_map.get(f"{d}::{k}") == "Tekrar Lazım")
 
     m_col1, m_col2 = st.columns(2)
     with m_col1:
@@ -627,63 +673,26 @@ with tabs[2]:
         st.subheader("📘 TYT Tüm Dersler Konu Listesi")
         secili_tyt_ders = st.selectbox("TYT Dersi Seçin", list(TYT_KONU_TAKIP.keys()), key="sel_tyt_ders_takip")
         konular = TYT_KONU_TAKIP[secili_tyt_ders]
-        ders_biten = sum(1 for k in konular if aktif_durumlar.get(f"{secili_tyt_ders}::{k}") == "Bitti")
-        ders_tekrar = sum(1 for k in konular if aktif_durumlar.get(f"{secili_tyt_ders}::{k}") == "Tekrar Lazım")
+        ders_biten = sum(1 for k in konular if durum_map.get(f"{secili_tyt_ders}::{k}") == "Bitti")
+        ders_tekrar = sum(1 for k in konular if durum_map.get(f"{secili_tyt_ders}::{k}") == "Tekrar Lazım")
         ders_yuzde = (ders_biten / len(konular)) * 100 if len(konular) > 0 else 0.0
         st.info(f"📌 **{secili_tyt_ders}** — **%{ders_yuzde:.1f}** Bitti ({ders_biten}/{len(konular)}) | Tekrar Lazım: **{ders_tekrar}**")
-
-        with st.container(border=True):
-            cols = st.columns(2)
-            for idx, konu in enumerate(konular):
-                anahtar = f"{secili_tyt_ders}::{konu}"
-                onceki_durum = mevcut_durumlar.get(anahtar, "Bitmedi")
-                varsayilan_idx = KONU_DURUMLARI.index(onceki_durum) if onceki_durum in KONU_DURUMLARI else 0
-                with cols[idx % 2]:
-                    st.radio(
-                        konu,
-                        options=KONU_DURUMLARI,
-                        index=varsayilan_idx,
-                        horizontal=True,
-                        key=f"rad_tyt_{anahtar}"
-                    )
+        konu_secici_render(secili_tyt_ders, konular, durum_map, "tyt")
 
     with tab_ayt_takip:
         st.subheader("📗 AYT Sayısal Dersler Konu Listesi")
         secili_ayt_ders = st.selectbox("AYT Sayısal Dersi Seçin", list(AYT_SAYISAL_KONU_TAKIP.keys()), key="sel_ayt_ders_takip")
         konular = AYT_SAYISAL_KONU_TAKIP[secili_ayt_ders]
-        ders_biten = sum(1 for k in konular if aktif_durumlar.get(f"{secili_ayt_ders}::{k}") == "Bitti")
-        ders_tekrar = sum(1 for k in konular if aktif_durumlar.get(f"{secili_ayt_ders}::{k}") == "Tekrar Lazım")
+        ders_biten = sum(1 for k in konular if durum_map.get(f"{secili_ayt_ders}::{k}") == "Bitti")
+        ders_tekrar = sum(1 for k in konular if durum_map.get(f"{secili_ayt_ders}::{k}") == "Tekrar Lazım")
         ders_yuzde = (ders_biten / len(konular)) * 100 if len(konular) > 0 else 0.0
         st.info(f"📌 **{secili_ayt_ders}** — **%{ders_yuzde:.1f}** Bitti ({ders_biten}/{len(konular)}) | Tekrar Lazım: **{ders_tekrar}**")
-
-        with st.container(border=True):
-            cols = st.columns(2)
-            for idx, konu in enumerate(konular):
-                anahtar = f"{secili_ayt_ders}::{konu}"
-                onceki_durum = mevcut_durumlar.get(anahtar, "Bitmedi")
-                varsayilan_idx = KONU_DURUMLARI.index(onceki_durum) if onceki_durum in KONU_DURUMLARI else 0
-                with cols[idx % 2]:
-                    st.radio(
-                        konu,
-                        options=KONU_DURUMLARI,
-                        index=varsayilan_idx,
-                        horizontal=True,
-                        key=f"rad_ayt_{anahtar}"
-                    )
+        konu_secici_render(secili_ayt_ders, konular, durum_map, "ayt")
 
     st.markdown("---")
     if st.button("💾 Konu Durumlarını Kaydet", type="primary", use_container_width=True, key="btn_save_konu_takip"):
-        son_durumlar = {}
-        for prefix, kaynak_sozluk in [("rad_tyt", TYT_KONU_TAKIP), ("rad_ayt", AYT_SAYISAL_KONU_TAKIP)]:
-            for d_adi, k_list in kaynak_sozluk.items():
-                for k in k_list:
-                    anahtar = f"{d_adi}::{k}"
-                    w_key = f"{prefix}_{anahtar}"
-                    son_durumlar[anahtar] = st.session_state.get(w_key, mevcut_durumlar.get(anahtar, "Bitmedi"))
-
-        st.session_state["konu_durum_map"] = son_durumlar
-        if save_konu_durumlari(user_id, son_durumlar):
-            st.success("✅ Tüm konu durumları (Bitti / Tekrar Lazım / Bitmedi) başarıyla kaydedildi!")
+        if save_konu_durumlari(user_id, durum_map):
+            st.success("✅ Tüm konu durumları (Bitmedi / Tekrar Lazım / Bitti) başarıyla kaydedildi!")
             st.rerun()
         else:
             st.warning("⚠️ İlerleme oturuma kaydedildi ancak Supabase'de 'konu_takip' tablosu bulunamadı. Lütfen SQL komutunu çalıştırdığından emin ol.")
