@@ -1,14 +1,11 @@
 import base64
 from datetime import datetime
 import io
-import os
 import pandas as pd
 import plotly.express as px
 import requests
 import streamlit as st
 from supabase import create_client, Client
-from PIL import Image
-from streamlit_drawable_canvas import st_canvas
 
 # ==========================================
 # 1. SUPABASE VE TELEGRAM BİLGİLERİ
@@ -35,24 +32,18 @@ st.markdown("""
 <style>
 div[data-testid="stHorizontalBlock"] button[kind="secondary"],
 div[data-testid="stHorizontalBlock"] button[kind="primary"] {
-    min-height: 46px !important;
-    border-radius: 12px !important;
+    min-height: 42px !important;
+    border-radius: 10px !important;
     font-weight: 700 !important;
-    font-size: 0.92rem !important;
-    transition: all 0.16s ease-in-out !important;
+    font-size: 0.9rem !important;
 }
-.konu-karti-satir {
-    background: rgba(99, 102, 241, 0.06);
-    border: 1px solid rgba(129, 140, 248, 0.25);
-    border-radius: 14px;
-    padding: 12px 14px 8px 14px;
-    margin-bottom: 10px;
+.konu-satir {
+    border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+    padding: 8px 0;
 }
-.konu-baslik-metni {
-    font-size: 1rem;
-    font-weight: 700;
-    margin-bottom: 8px;
-    color: #e2e8f0;
+.konu-ad {
+    font-weight: 600;
+    margin-bottom: 6px;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -62,98 +53,91 @@ div[data-testid="stHorizontalBlock"] button[kind="primary"] {
 # ==========================================
 HAZIR_KONULAR = {
     "TYT Türkçe": [
-        "Sözcükte Anlam", "Cümlede Anlam", "Paragrafta Anlam", "Paragrafta Yapı", "Paragrafta Ana Fikir", 
-        "Ses Bilgisi", "Yazım Kuralları", "Noktalama İşaretleri", "Sözcük Türleri", "Fiiller ve Fiilimsiler", 
+        "Sözcükte Anlam", "Cümlede Anlam", "Paragrafta Anlam", "Paragrafta Yapı", "Paragrafta Ana Fikir",
+        "Ses Bilgisi", "Yazım Kuralları", "Noktalama İşaretleri", "Sözcük Türleri", "Fiiller ve Fiilimsiler",
         "Cümlenin Ögeleri", "Cümle Türleri", "Anlatım Bozuklukları"
     ],
     "TYT Matematik": [
-        "Temel Kavramlar", "Sayı Basamakları", "Bölme-Bölünebilme", "EBOB-EKOK", "Rasyonel Sayılar", 
-        "Basit Eşitsizlikler", "Mutlak Değer", "Üslü İfadeler", "Köklü İfadeler", "Çarpanlara Ayırma", 
-        "Oran-Orantı", "Denklem Çözme", "Sayı-Kesir Problemleri", "Yaş Problemleri", "Yüzde-Kâr-Zarar Problemleri", 
-        "Karışım Problemleri", "Hız-Hareket Problemleri", "İşçi-Havuz Problemleri", "Kümeler ve Mantık", 
+        "Temel Kavramlar", "Sayı Basamakları", "Bölme-Bölünebilme", "EBOB-EKOK", "Rasyonel Sayılar",
+        "Basit Eşitsizlikler", "Mutlak Değer", "Üslü İfadeler", "Köklü İfadeler", "Çarpanlara Ayırma",
+        "Oran-Orantı", "Denklem Çözme", "Sayı-Kesir Problemleri", "Yaş Problemleri", "Yüzde-Kâr-Zarar Problemleri",
+        "Karışım Problemleri", "Hız-Hareket Problemleri", "İşçi-Havuz Problemleri", "Kümeler ve Mantık",
         "Fonksiyonlar", "Permütasyon-Kombinasyon", "Olasılık", "İstatistik",
-        "Doğruda ve Üçgende Açılar", "Dik ve Özel Üçgenler", "İkizkenar-Eşkenar Üçgen", "Üçgende Alan", 
-        "Üçgende Benzerlik", "Açıortay-Kenarortay", "Çokgenler ve Dörtgenler", "Paralelkenar-Eşkenar Dörtgen", 
+        "Doğruda ve Üçgende Açılar", "Dik ve Özel Üçgenler", "İkizkenar-Eşkenar Üçgen", "Üçgende Alan",
+        "Üçgende Benzerlik", "Açıortay-Kenarortay", "Çokgenler ve Dörtgenler", "Paralelkenar-Eşkenar Dörtgen",
         "Dikdörtgen ve Kare", "Yamuk ve Deltoid", "Çember ve Daire", "Katı Cisimler"
     ],
     "TYT Fizik": [
-        "Fizik Bilimine Giriş", "Madde ve Özellikleri", "Kuvvet ve Hareket", "İş, Güç ve Enerji", 
-        "Isı, Sıcaklık ve Genleşme", "Basınç ve Kaldırma Kuvveti", "Elektrostatik", "Elektrik ve Manyetizma", 
+        "Fizik Bilimine Giriş", "Madde ve Özellikleri", "Kuvvet ve Hareket", "İş, Güç ve Enerji",
+        "Isı, Sıcaklık ve Genleşme", "Basınç ve Kaldırma Kuvveti", "Elektrostatik", "Elektrik ve Manyetizma",
         "Dalgalar", "Optik"
     ],
     "TYT Kimya": [
-        "Kimya Bilimi", "Atom ve Periyodik Sistem", "Kimyasal Türler Arası Etkileşimler", 
-        "Maddenin Halleri", "Doğa ve Kimya", "Kimyanın Temel Kanunları", "Mol Kavramı", 
+        "Kimya Bilimi", "Atom ve Periyodik Sistem", "Kimyasal Türler Arası Etkileşimler",
+        "Maddenin Halleri", "Doğa ve Kimya", "Kimyanın Temel Kanunları", "Mol Kavramı",
         "Tepkime Hesaplamaları", "Karışımlar", "Asitler, Bazlar ve Tuzlar", "Kimya Her Yerde"
     ],
     "TYT Biyoloji": [
-        "Canlıların Ortak Özellikleri", "Canlıların Temel Bileşikleri", "Hücre ve Organeller", 
+        "Canlıların Ortak Özellikleri", "Canlıların Temel Bileşikleri", "Hücre ve Organeller",
         "Madde Geçişleri", "Canlıların Sınıflandırılması", "Hücre Bölünmeleri", "Kalıtım", "Ekosistem Ekolojisi"
     ],
     "TYT Tarih": [
-        "Tarih Bilimi", "İlk Çağ Uygarlıkları", "İlk Türk Devletleri", "İslam Medeniyeti", 
+        "Tarih Bilimi", "İlk Çağ Uygarlıkları", "İlk Türk Devletleri", "İslam Medeniyeti",
         "Türk-İslam Devletleri", "Osmanlı Tarihi", "20. Yüzyıl Başlarında Osmanlı", "Milli Mücadele", "Atatürk İnkılapları"
     ],
     "TYT Coğrafya": [
-        "Doğa ve İnsan", "Dünyanın Şekli ve Hareketleri", "Coğrafi Konum", "Harita Bilgisi", 
+        "Doğa ve İnsan", "Dünyanın Şekli ve Hareketleri", "Coğrafi Konum", "Harita Bilgisi",
         "İklim Bilgisi", "İç ve Dış Kuvvetler", "Nüfus ve Yerleşme", "Doğal Afetler"
     ],
     "TYT Felsefe & Din": [
-        "Felsefeyi Tanıma", "Bilgi Felsefesi", "Varlık Felsefesi", "Ahlak Felsefesi", "Sanat Felsefesi", 
+        "Felsefeyi Tanıma", "Bilgi Felsefesi", "Varlık Felsefesi", "Ahlak Felsefesi", "Sanat Felsefesi",
         "Din Felsefesi", "Siyaset Felsefesi", "Bilim Felsefesi", "İbadet ve Ahlak", "İslam ve Bilim"
     ],
     "AYT Matematik": [
-        "Polinomlar", "İkinci Dereceden Denklemler", "Karmaşık Sayılar", "Parabol", 
-        "Eşitsizlikler", "Trigonometri", "Logaritma", "Diziler", 
+        "Polinomlar", "İkinci Dereceden Denklemler", "Karmaşık Sayılar", "Parabol",
+        "Eşitsizlikler", "Trigonometri", "Logaritma", "Diziler",
         "Limit ve Süreklilik", "Türev ve Uygulamaları", "İntegral ve Uygulamaları",
-        "Noktanın ve Doğrunun Analitiği", "Çemberin Analitik İncelenmesi", "Dönüşüm Geometrisi", 
+        "Noktanın ve Doğrunun Analitiği", "Çemberin Analitik İncelenmesi", "Dönüşüm Geometrisi",
         "Çember ve Daire", "Katı Cisimler"
     ],
     "AYT Fizik": [
-        "Vektörler ve Bağıl Hareket", "Newton'un Hareket Yasaları", "Atışlar", "İş-Güç-Enerji", 
-        "İtme ve Momentum", "Tork ve Denge", "Basit Makineler", "Elektriksel Alan ve Potansiyel", 
-        "Kondansatörler", "Manyetizma ve İndüksiyon", "Alternatif Akım", "Çembersel Hareket", 
+        "Vektörler ve Bağıl Hareket", "Newton'un Hareket Yasaları", "Atışlar", "İş-Güç-Enerji",
+        "İtme ve Momentum", "Tork ve Denge", "Basit Makineler", "Elektriksel Alan ve Potansiyel",
+        "Kondansatörler", "Manyetizma ve İndüksiyon", "Alternatif Akım", "Çembersel Hareket",
         "Basit Harmonik Hareket", "Dalga Mekaniği", "Modern Fizik"
     ],
     "AYT Kimya": [
-        "Modern Atom Teorisi", "Gazlar", "Sıvı Çözeltiler", "Kimyasal Tepkimelerde Enerji", 
-        "Tepkime Hızları", "Kimyasal Denge", "Asit-Baz Dengesi", "Çözünürlük Dengesi (KÇÇ)", 
+        "Modern Atom Teorisi", "Gazlar", "Sıvı Çözeltiler", "Kimyasal Tepkimelerde Enerji",
+        "Tepkime Hızları", "Kimyasal Denge", "Asit-Baz Dengesi", "Çözünürlük Dengesi (KÇÇ)",
         "Kimya ve Elektrik", "Organik Kimyaya Giriş", "Organik Bileşikler"
     ],
     "AYT Biyoloji": [
-        "Sinir ve Duyu Organları", "Endokrin Sistem", "Destek ve Hareket Sistemi", "Sindirim Sistemi", 
-        "Dolaşım ve Bağışıklık", "Solunum Sistemi", "Boşaltım Sistemi", "Üreme ve Gelişme", 
+        "Sinir ve Duyu Organları", "Endokrin Sistem", "Destek ve Hareket Sistemi", "Sindirim Sistemi",
+        "Dolaşım ve Bağışıklık", "Solunum Sistemi", "Boşaltım Sistemi", "Üreme ve Gelişme",
         "Popülasyon ve Komünite Ekolojisi", "Nükleik Asitler ve Protein Sentezi", "Canlılarda Enerji Dönüşümleri", "Bitki Biyolojisi"
     ],
     "AYT Edebiyat": [
-        "Şiir Bilgisi ve Edebi Sanatlar", "İslamiyet Öncesi ve Halk Edebiyatı", "Divan Edebiyatı", 
+        "Şiir Bilgisi ve Edebi Sanatlar", "İslamiyet Öncesi ve Halk Edebiyatı", "Divan Edebiyatı",
         "Tanzimat Edebiyatı", "Servet-i Fünun ve Fecr-i Ati", "Milli Edebiyat", "Cumhuriyet Dönemi Edebiyatı", "Edebi Akımlar"
     ],
     "AYT Tarih": [
-        "Tarih ve Zaman", "İlk ve Orta Çağlarda Türk Dünyası", "İslam Medeniyeti", "Osmanlı Siyaseti ve Medeniyeti", 
+        "Tarih ve Zaman", "İlk ve Orta Çağlarda Türk Dünyası", "İslam Medeniyeti", "Osmanlı Siyaseti ve Medeniyeti",
         "20. Yüzyıl Osmanlı", "Milli Mücadele", "Atatürkçülük", "Çağdaş Türk ve Dünya Tarihi"
     ],
     "AYT Coğrafya": [
-        "Ekosistem ve Madde Döngüleri", "Türkiye'de Ekonomi ve Sektörler", "Küresel Ticaret ve Turizm", 
+        "Ekosistem ve Madde Döngüleri", "Türkiye'de Ekonomi ve Sektörler", "Küresel Ticaret ve Turizm",
         "Jeopolitik Konum", "Bölgesel Kalkınma Projeleri", "Küresel Örgütler ve Çevre"
     ]
 }
 
 DERS_LISTESI = list(HAZIR_KONULAR.keys())
-
-TYT_KONU_TAKIP = {
-    k: v for k, v in HAZIR_KONULAR.items() if k.startswith("TYT")
-}
-
+TYT_KONU_TAKIP = {k: v for k, v in HAZIR_KONULAR.items() if k.startswith("TYT")}
 AYT_SAYISAL_KONU_TAKIP = {
     "AYT Matematik": HAZIR_KONULAR["AYT Matematik"],
     "AYT Fizik": HAZIR_KONULAR["AYT Fizik"],
     "AYT Kimya": HAZIR_KONULAR["AYT Kimya"],
     "AYT Biyoloji": HAZIR_KONULAR["AYT Biyoloji"]
 }
-
-TUM_TAKIP_DERSLERI = {**TYT_KONU_TAKIP, **AYT_SAYISAL_KONU_TAKIP}
-
 KONU_DURUMLARI = ["Bitmedi", "Tekrar Lazım", "Bitti"]
 
 # ==========================================
@@ -180,6 +164,7 @@ def login_user(username, password):
     except Exception:
         return False, None
 
+@st.cache_data(ttl=20)
 def get_denemeler(user_id=None):
     try:
         if user_id:
@@ -190,6 +175,7 @@ def get_denemeler(user_id=None):
     except Exception:
         return pd.DataFrame()
 
+@st.cache_data(ttl=20)
 def get_yanlislar(user_id=None):
     try:
         if user_id:
@@ -200,6 +186,7 @@ def get_yanlislar(user_id=None):
     except Exception:
         return pd.DataFrame()
 
+@st.cache_data(ttl=30)
 def get_all_users():
     try:
         res = supabase.table("users").select("id, username").execute()
@@ -207,6 +194,7 @@ def get_all_users():
     except Exception:
         return pd.DataFrame()
 
+@st.cache_data(ttl=20)
 def get_hatirlaticilar(user_id):
     try:
         res = supabase.table("hatirlaticilar").select("*").eq("user_id", user_id).execute()
@@ -251,35 +239,40 @@ def save_konu_durumlari(user_id, durum_map):
     except Exception:
         return False
 
-def konu_secici_render(ders_adi, konular, durum_map, prefix):
-    st.markdown('<div class="konu-karti-satir">', unsafe_allow_html=True)
-    for konu in konular:
-        anahtar = f"{ders_adi}::{konu}"
-        aktif_durum = durum_map.get(anahtar, "Bitmedi")
-        st.markdown(f'<div class="konu-baslik-metni">🔹 {konu}</div>', unsafe_allow_html=True)
-        c1, c2, c3 = st.columns(3)
+def ders_bloklari_render(ders_sozlugu, durum_map, ders_acik_state, prefix):
+    for ders_adi, konular in ders_sozlugu.items():
+        ders_biten = sum(1 for k in konular if durum_map.get(f"{ders_adi}::{k}") == "Bitti")
+        ders_tekrar = sum(1 for k in konular if durum_map.get(f"{ders_adi}::{k}") == "Tekrar Lazım")
+        ders_yuzde = (ders_biten / len(konular)) * 100 if konular else 0.0
+        acik_mi = ders_acik_state.get(ders_adi, False)
+        centik = "▾" if acik_mi else "▸"
 
-        secenekler = [
-            ("Bitmedi", "Bitmedi", c1),
-            ("Tekrar Lazım", "Tekrar Lazım", c2),
-            ("Bitti", "Bitti", c3),
-        ]
+        if st.button(
+            f"{centik} {ders_adi} — %{ders_yuzde:.1f} Bitti ({ders_biten}/{len(konular)}) | Tekrar: {ders_tekrar}",
+            key=f"centik_{prefix}_{ders_adi}",
+            type="primary" if acik_mi else "secondary",
+            use_container_width=True
+        ):
+            ders_acik_state[ders_adi] = not acik_mi
+            st.rerun()
 
-        for durum_degeri, etiket, kolon in secenekler:
-            secili_mi = (aktif_durum == durum_degeri)
-            btn_etiket = f"✓ {etiket}" if secili_mi else etiket
-            btn_tip = "primary" if secili_mi else "secondary"
-            with kolon:
-                if st.button(
-                    btn_etiket,
-                    key=f"btn_{prefix}_{anahtar}_{durum_degeri}",
-                    type=btn_tip,
-                    use_container_width=True
-                ):
-                    durum_map[anahtar] = durum_degeri
+        if acik_mi:
+            for konu in konular:
+                anahtar = f"{ders_adi}::{konu}"
+                mevcut = durum_map.get(anahtar, "Bitmedi")
+                st.markdown(f'<div class="konu-satir"><div class="konu-ad">🔹 {konu}</div>', unsafe_allow_html=True)
+                secim = st.radio(
+                    f"{konu} durumu",
+                    options=KONU_DURUMLARI,
+                    index=KONU_DURUMLARI.index(mevcut),
+                    horizontal=True,
+                    label_visibility="collapsed",
+                    key=f"rad_{prefix}_{anahtar}"
+                )
+                if secim != mevcut:
+                    durum_map[anahtar] = secim
                     st.rerun()
-        st.markdown("<hr style='margin: 8px 0 10px 0; opacity: 0.2;'>", unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
+                st.markdown("</div>", unsafe_allow_html=True)
 
 if "logged_in" not in st.session_state:
     st.session_state["logged_in"] = False
@@ -289,7 +282,7 @@ if "user_info" not in st.session_state:
 if not st.session_state["logged_in"]:
     st.title("🎓 YKS Koçluk & Analiz Paneli")
     tab_login, tab_register = st.tabs(["Giriş Yap", "Kayıt Ol"])
-    
+
     with tab_login:
         st.subheader("Kullanıcı Girişi")
         l_user = st.text_input("Kullanıcı Adı", key="l_user")
@@ -299,7 +292,6 @@ if not st.session_state["logged_in"]:
             if ok:
                 st.session_state["logged_in"] = True
                 st.session_state["user_info"] = user
-                st.success("Giriş başarılı!")
                 st.rerun()
             else:
                 st.error("Hatalı kullanıcı adı veya şifre!")
@@ -311,10 +303,7 @@ if not st.session_state["logged_in"]:
         if st.button("Kayıt Ol"):
             if r_user and r_pass:
                 ok, msg = register_user(r_user, r_pass)
-                if ok:
-                    st.success(msg)
-                else:
-                    st.error(msg)
+                st.success(msg) if ok else st.error(msg)
             else:
                 st.warning("Lütfen tüm alanları doldurun.")
     st.stop()
@@ -335,14 +324,13 @@ if st.sidebar.button("Çıkış Yap"):
 st.title("📈 YKS Detaylı Analiz & Takip Sistemi")
 
 tab_titles = [
-    "📝 Deneme Ekle & Yönet", 
-    "❌ Yanlış Defteri", 
+    "📝 Deneme Ekle & Yönet",
+    "❌ Yanlış Defteri",
     "✅ Konu Takip Çizelgesi",
-    "📊 Genel Net Grafikleri", 
-    "⚠️ Konu Analizi & Akıllı Uyarı", 
+    "📊 Genel Net Grafikleri",
+    "⚠️ Konu Analizi & Akıllı Uyarı",
     "🔔 Hatırlatıcılar & Bildirim"
 ]
-
 if IS_ADMIN:
     tab_titles.append("👑 Yönetici (Admin) Paneli")
 
@@ -354,25 +342,25 @@ tabs = st.tabs(tab_titles)
 with tabs[0]:
     st.header("📝 Deneme Kaydı ve Yönetimi")
     sub_tab1, sub_tab2, sub_tab3 = st.tabs(["➕ Yeni Deneme Ekle", "⚙️ Denemeleri Düzenle & Sil", "🖼️ Sınav Görseli / Karne Yükle"])
-    
+
     with sub_tab1:
-        st.subheader("Yeni Deneme Sınavı Ekle")
         deneme_turu = st.radio("Eklenecek Sınav Türünü Seçin", ["TYT Genel Deneme", "AYT Genel Deneme", "Branş Denemesi"], horizontal=True)
-        
         col_genel1, col_genel2 = st.columns(2)
         with col_genel1:
             tarih = st.date_input("Deneme Tarihi", datetime.now(), key="add_tarih")
         with col_genel2:
             yayin = st.text_input("Yayın Adı", placeholder="Örn: 3D, Bilgi Sarmal, Özdebir", key="add_yayin")
-            
+
         st.markdown("---")
-        
-        if deneme_turu == "TYT Genel Deneme":
-            st.markdown("### 📘 TYT Ders Ders Net ve Hatalı Konu Girişi")
-            tyt_dersler = ["TYT Türkçe", "TYT Matematik", "TYT Fizik", "TYT Kimya", "TYT Biyoloji", "TYT Tarih", "TYT Coğrafya", "TYT Felsefe & Din"]
-            tyt_kayitlar = []
+
+        if deneme_turu in ("TYT Genel Deneme", "AYT Genel Deneme"):
+            is_tyt = (deneme_turu == "TYT Genel Deneme")
+            dersler = ["TYT Türkçe", "TYT Matematik", "TYT Fizik", "TYT Kimya", "TYT Biyoloji", "TYT Tarih", "TYT Coğrafya", "TYT Felsefe & Din"] if is_tyt else ["AYT Matematik", "AYT Fizik", "AYT Kimya", "AYT Biyoloji", "AYT Edebiyat", "AYT Tarih", "AYT Coğrafya"]
+            kayit_turu_db = "TYT Genel" if is_tyt else "AYT Genel"
+            kayitlar = []
             toplam_net = 0.0
-            for d_adi in tyt_dersler:
+
+            for d_adi in dersler:
                 st.subheader(f"📌 {d_adi}")
                 col_d, col_y, col_konu = st.columns([1, 1, 3])
                 with col_d:
@@ -383,74 +371,30 @@ with tabs[0]:
                 toplam_net += d_net
                 with col_konu:
                     d_konular = st.multiselect(f"Hatalı Konular ({d_adi})", options=HAZIR_KONULAR.get(d_adi, []), key=f"k_{d_adi}")
-                
+
                 hatali_liste_final = []
                 if d_konular:
-                    st.markdown(f"<small>📌 <b>{d_adi}</b> için seçilen konuların yanlış adetleri:</small>", unsafe_allow_html=True)
                     for konu in d_konular:
                         adet = st.number_input(f"'{konu}' kaç yanlış?", min_value=1, max_value=max(1, int(d_yanlis)), value=1, key=f"adet_{d_adi}_{konu}")
-                        for _ in range(int(adet)):
-                            hatali_liste_final.append(konu)
+                        hatali_liste_final.extend([konu] * int(adet))
 
-                if d_dogru > 0 or d_yanlis > 0 or len(d_konular) > 0:
-                    tyt_kayitlar.append({"ders": d_adi, "dogru": d_dogru, "yanlis": d_yanlis, "net": d_net, "hatali_konular": ", ".join(hatali_liste_final) if hatali_liste_final else ""})
-                st.markdown("<hr style='margin: 5px 0;'>", unsafe_allow_html=True)
-                
-            st.metric("Hesaplanan Toplam TYT Neti", f"{toplam_net:.2f}")
-            if st.button("Tüm TYT Denemesini Kaydet", use_container_width=True, type="primary"):
-                try:
-                    for item in tyt_kayitlar:
-                        data = {"user_id": user_id, "tarih": str(tarih), "yayin": yayin, "kayit_turu": "TYT Genel", "ders": item["ders"], "dogru": item["dogru"], "yanlis": item["yanlis"], "net": item["net"], "hatali_konular": item["hatali_konular"]}
-                        supabase.table("denemeler").insert(data).execute()
-                    st.success("TYT Denemesi başarıyla eklendi!")
-                    akilli_uyari_gonder(f"📝 *Yeni TYT Denemesi Eklendi!*\n👤 Öğrenci: {username}\n📅 Tarih: {tarih}\n📚 Yayın: {yayin}\n🎯 Toplam Net: {toplam_net:.2f}")
-                    st.rerun()
-                except Exception as e:
-                    st.error(f"Hata oluştu: {e}")
+                if d_dogru > 0 or d_yanlis > 0 or d_konular:
+                    kayitlar.append({"ders": d_adi, "dogru": d_dogru, "yanlis": d_yanlis, "net": d_net, "hatali_konular": ", ".join(hatali_liste_final)})
 
-        elif deneme_turu == "AYT Genel Deneme":
-            st.markdown("### 📗 AYT Ders Ders Net ve Hatalı Konu Girişi")
-            ayt_dersler = ["AYT Matematik", "AYT Fizik", "AYT Kimya", "AYT Biyoloji", "AYT Edebiyat", "AYT Tarih", "AYT Coğrafya"]
-            ayt_kayitlar = []
-            toplam_net = 0.0
-            for d_adi in ayt_dersler:
-                st.subheader(f"📌 {d_adi}")
-                col_d, col_y, col_konu = st.columns([1, 1, 3])
-                with col_d:
-                    d_dogru = st.number_input(f"Doğru ({d_adi})", min_value=0.0, step=1.0, key=f"d_{d_adi}")
-                with col_y:
-                    d_yanlis = st.number_input(f"Yanlış ({d_adi})", min_value=0.0, step=1.0, key=f"y_{d_adi}")
-                d_net = d_dogru - (d_yanlis * 0.25)
-                toplam_net += d_net
-                with col_konu:
-                    d_konular = st.multiselect(f"Hatalı Konular ({d_adi})", options=HAZIR_KONULAR.get(d_adi, []), key=f"k_{d_adi}")
-                
-                hatali_liste_final = []
-                if d_konular:
-                    st.markdown(f"<small>📌 <b>{d_adi}</b> için seçilen konuların yanlış adetleri:</small>", unsafe_allow_html=True)
-                    for konu in d_konular:
-                        adet = st.number_input(f"'{konu}' kaç yanlış?", min_value=1, max_value=max(1, int(d_yanlis)), value=1, key=f"adet_{d_adi}_{konu}")
-                        for _ in range(int(adet)):
-                            hatali_liste_final.append(konu)
-
-                if d_dogru > 0 or d_yanlis > 0 or len(d_konular) > 0:
-                    ayt_kayitlar.append({"ders": d_adi, "dogru": d_dogru, "yanlis": d_yanlis, "net": d_net, "hatali_konular": ", ".join(hatali_liste_final) if hatali_liste_final else ""})
-                st.markdown("<hr style='margin: 5px 0;'>", unsafe_allow_html=True)
-                
-            st.metric("Hesaplanan Toplam AYT Neti", f"{toplam_net:.2f}")
-            if st.button("Tüm AYT Denemesini Kaydet", use_container_width=True, type="primary"):
-                try:
-                    for item in ayt_kayitlar:
-                        data = {"user_id": user_id, "tarih": str(tarih), "yayin": yayin, "kayit_turu": "AYT Genel", "ders": item["ders"], "dogru": item["dogru"], "yanlis": item["yanlis"], "net": item["net"], "hatali_konular": item["hatali_konular"]}
-                        supabase.table("denemeler").insert(data).execute()
-                    st.success("AYT Denemesi başarıyla eklendi!")
-                    akilli_uyari_gonder(f"📝 *Yeni AYT Denemesi Eklendi!*\n👤 Öğrenci: {username}\n📅 Tarih: {tarih}\n📚 Yayın: {yayin}\n🎯 Toplam Net: {toplam_net:.2f}")
-                    st.rerun()
-                except Exception as e:
-                    st.error(f"Hata oluştu: {e}")
-
+            st.metric(f"Hesaplanan Toplam {kayit_turu_db} Neti", f"{toplam_net:.2f}")
+            if st.button("Tüm Denemeyi Kaydet", use_container_width=True, type="primary"):
+                for item in kayitlar:
+                    supabase.table("denemeler").insert({
+                        "user_id": user_id, "tarih": str(tarih), "yayin": yayin,
+                        "kayit_turu": kayit_turu_db, "ders": item["ders"],
+                        "dogru": item["dogru"], "yanlis": item["yanlis"],
+                        "net": item["net"], "hatali_konular": item["hatali_konular"]
+                    }).execute()
+                get_denemeler.clear()
+                akilli_uyari_gonder(f"📝 *Yeni {kayit_turu_db} Denemesi Eklendi!*\n👤 Öğrenci: {username}\n📅 Tarih: {tarih}\n📚 Yayın: {yayin}\n🎯 Toplam Net: {toplam_net:.2f}")
+                st.success("Deneme başarıyla eklendi!")
+                st.rerun()
         else:
-            st.markdown("### 📙 Tek Ders / Branş Denemesi Girişi")
             col_b1, col_b2 = st.columns(2)
             with col_b1:
                 b_ders = st.selectbox("Branş Dersi", DERS_LISTESI, key="brans_ders_select")
@@ -463,29 +407,26 @@ with tabs[0]:
                 b_ek_konu = st.text_input("Diğer / Manuel Konular (Virgülle ayırın)", key="brans_ek_konu")
 
             hatali_liste_final = []
-            if b_konular:
-                st.markdown(f"<small>📌 Seçilen konuların yanlış adetleri:</small>", unsafe_allow_html=True)
-                for konu in b_konular:
-                    adet = st.number_input(f"'{konu}' kaç yanlış?", min_value=1, max_value=max(1, int(b_yanlis)), value=1, key=f"adet_brans_{konu}")
-                    for _ in range(int(adet)):
-                        hatali_liste_final.append(konu)
+            for konu in b_konular:
+                adet = st.number_input(f"'{konu}' kaç yanlış?", min_value=1, max_value=max(1, int(b_yanlis)), value=1, key=f"adet_brans_{konu}")
+                hatali_liste_final.extend([konu] * int(adet))
 
             if st.button("Branş Denemesini Kaydet", use_container_width=True, type="primary"):
-                try:
-                    tum_k = list(hatali_liste_final)
-                    if b_ek_konu.strip():
-                        tum_k.extend([k.strip() for k in b_ek_konu.split(",") if k.strip()])
-                    hatali_str = ", ".join(tum_k)
-                    data = {"user_id": user_id, "tarih": str(tarih), "yayin": yayin, "kayit_turu": "Branş Denemesi", "ders": b_ders, "dogru": b_dogru, "yanlis": b_yanlis, "net": b_net, "hatali_konular": hatali_str}
-                    supabase.table("denemeler").insert(data).execute()
-                    st.success("Branş Denemesi Başarıyla Eklendi!")
-                    akilli_uyari_gonder(f"📝 *Yeni Branş Denemesi Eklendi!*\n👤 Öğrenci: {username}\n📚 Ders: {b_ders}\n🎯 Net: {b_net:.2f}")
-                    st.rerun()
-                except Exception as e:
-                    st.error(f"Hata oluştu: {e}")
+                tum_k = list(hatali_liste_final)
+                if b_ek_konu.strip():
+                    tum_k.extend([k.strip() for k in b_ek_konu.split(",") if k.strip()])
+                supabase.table("denemeler").insert({
+                    "user_id": user_id, "tarih": str(tarih), "yayin": yayin,
+                    "kayit_turu": "Branş Denemesi", "ders": b_ders,
+                    "dogru": b_dogru, "yanlis": b_yanlis, "net": b_net,
+                    "hatali_konular": ", ".join(tum_k)
+                }).execute()
+                get_denemeler.clear()
+                akilli_uyari_gonder(f"📝 *Yeni Branş Denemesi Eklendi!*\n👤 Öğrenci: {username}\n📚 Ders: {b_ders}\n🎯 Net: {b_net:.2f}")
+                st.success("Branş Denemesi Başarıyla Eklendi!")
+                st.rerun()
 
     with sub_tab2:
-        st.subheader("Mevcut Denemeleri Düzenle veya Sil")
         df_denemeler = get_denemeler(user_id)
         if df_denemeler.empty:
             st.info("Henüz eklenmiş bir deneme bulunmuyor.")
@@ -502,74 +443,65 @@ with tabs[0]:
                 e_ders = st.selectbox("Ders", DERS_LISTESI, index=DERS_LISTESI.index(secili_row["ders"]) if secili_row["ders"] in DERS_LISTESI else 0, key=f"edit_ders_{secilen_id}")
                 e_dogru = st.number_input("Doğru", value=float(secili_row["dogru"]), key=f"edit_dogru_{secilen_id}")
                 e_yanlis = st.number_input("Yanlış", value=float(secili_row["yanlis"]), key=f"edit_yanlis_{secilen_id}")
-                e_hatali = st.text_area("Hatalı Konular", value=str(secili_row["hatali_konular"] if secili_row["hatali_konular"] else ""), key=f"edit_hatali_{secilen_id}")
+                e_hatali = st.text_area("Hatalı Konular", value=str(secili_row["hatali_konular"] or ""), key=f"edit_hatali_{secilen_id}")
                 if st.button("Güncellemeleri Kaydet", key=f"btn_update_{secilen_id}"):
-                    try:
-                        supabase.table("denemeler").update({"tarih": e_tarih, "yayin": e_yayin, "kayit_turu": e_kayit_turu, "ders": e_ders, "dogru": e_dogru, "yanlis": e_yanlis, "net": e_dogru - (e_yanlis * 0.25), "hatali_konular": e_hatali}).eq("id", secilen_id).execute()
-                        st.success("Güncellendi!")
-                        st.rerun()
-                    except Exception as e:
-                        st.error(f"Hata: {e}")
+                    supabase.table("denemeler").update({
+                        "tarih": e_tarih, "yayin": e_yayin, "kayit_turu": e_kayit_turu,
+                        "ders": e_ders, "dogru": e_dogru, "yanlis": e_yanlis,
+                        "net": e_dogru - (e_yanlis * 0.25), "hatali_konular": e_hatali
+                    }).eq("id", secilen_id).execute()
+                    get_denemeler.clear()
+                    st.success("Güncellendi!")
+                    st.rerun()
             with col_edit2:
-                st.warning("Seçilen kaydı silmek istediğinizden emin misiniz?")
                 if st.button("🔴 Kaydı Sil", type="primary", key=f"btn_delete_{secilen_id}"):
                     supabase.table("denemeler").delete().eq("id", secilen_id).execute()
+                    get_denemeler.clear()
                     st.success("Silindi!")
                     st.rerun()
 
     with sub_tab3:
-        st.subheader("📸 Sınav Karnesi veya Soru Fotoğrafı Yükle")
+        from PIL import Image
         uploaded_file = st.file_uploader("Bir Resim Seçin", type=["png", "jpg", "jpeg"], key="img_uploader")
         if uploaded_file is not None:
             st.image(Image.open(uploaded_file), caption="Önizleme", use_container_width=True)
-            st.success("Yüklendi!")
 
 # ------------------------------------------
 # TAB 2: YANLIŞ DEFTERİ
 # ------------------------------------------
 with tabs[1]:
+    from PIL import Image
+    from streamlit_drawable_canvas import st_canvas
+
     st.header("❌ Yanlış Defteri & Soru Bankası")
-    
     sub_t_ekle, sub_t_liste = st.tabs(["➕ Yeni Yanlış Soru Ekle", "📚 Yanlış Defterim (Filtreli Liste)"])
-    
+
     with sub_t_ekle:
-        st.subheader("Yanlış Yaptığın Soruyu Kaydet")
         y_ders = st.selectbox("Ders Seçin", DERS_LISTESI, key="yanlis_ders_sec")
         y_konu = st.selectbox("Konu Seçin", HAZIR_KONULAR.get(y_ders, []), key="yanlis_konu_sec")
-        y_not = st.text_area("Soru Notu / Çözüm Açıklaması", placeholder="Örn: İşlem hatası yaptım...", key="yanlis_not")
-        
+        y_not = st.text_area("Soru Notu / Çözüm Açıklaması", key="yanlis_not")
         y_foto_dosya = st.file_uploader("Sorunun Fotoğrafını Yükle", type=["png", "jpg", "jpeg"], key="yanlis_foto_yukle")
-        
+
         foto_base64 = ""
         if y_foto_dosya is not None:
             pil_img = Image.open(y_foto_dosya)
-            pil_img.thumbnail((1400, 1400))
+            pil_img.thumbnail((1200, 1200))
             st.image(pil_img, caption="Yüklenen Soru Görseli", use_container_width=True)
-            
             buffered = io.BytesIO()
-            pil_img.save(buffered, format="JPEG", quality=90)
+            pil_img.save(buffered, format="JPEG", quality=85)
             foto_base64 = base64.b64encode(buffered.getvalue()).decode()
-        
+
         if st.button("Yanlış Soruyu Deftere Ekle", type="primary", key="btn_add_yanlis"):
-            try:
-                data = {
-                    "user_id": str(user_id),
-                    "ders": y_ders,
-                    "konu": y_konu,
-                    "notlar": y_not,
-                    "tarih": str(datetime.now().date()),
-                    "foto_adi": foto_base64
-                }
-                supabase.table("yanlis_defteri").insert(data).execute()
-                st.success("Yanlış soru deftere başarıyla eklendi!")
-                st.rerun()
-            except Exception as e:
-                st.error(f"Hata oluştu: {e}")
+            supabase.table("yanlis_defteri").insert({
+                "user_id": str(user_id), "ders": y_ders, "konu": y_konu,
+                "notlar": y_not, "tarih": str(datetime.now().date()), "foto_adi": foto_base64
+            }).execute()
+            get_yanlislar.clear()
+            st.success("Yanlış soru deftere başarıyla eklendi!")
+            st.rerun()
 
     with sub_t_liste:
-        st.subheader("Filtrelenmiş Yanlış Sorularım")
         df_yanlislar = get_yanlislar(user_id)
-        
         if df_yanlislar.empty:
             st.info("Yanlış defterinde henüz kayıtlı soru bulunmuyor.")
         else:
@@ -579,76 +511,51 @@ with tabs[1]:
             with f_col2:
                 konu_secenekleri = ["Hepsi"] if secilen_fiyat_ders == "Hepsi" else ["Hepsi"] + HAZIR_KONULAR.get(secilen_fiyat_ders, [])
                 secilen_fiyat_konu = st.selectbox("Konu Filtresi", konu_secenekleri, key="filtre_yanlis_konu")
-                
+
             df_filtered_y = df_yanlislar.copy()
             if secilen_fiyat_ders != "Hepsi":
                 df_filtered_y = df_filtered_y[df_filtered_y["ders"] == secilen_fiyat_ders]
             if secilen_fiyat_konu != "Hepsi":
                 df_filtered_y = df_filtered_y[df_filtered_y["konu"] == secilen_fiyat_konu]
-                
-            if not df_filtered_y.empty:
-                for index, row in df_filtered_y.iterrows():
-                    with st.expander(f"📌 ID: {row['id']} | {row['ders']} - {row['konu']} ({row['tarih']})"):
-                        st.write(f"**Not / Açıklama:** {row['notlar']}")
-                        
-                        img_bg = None
-                        if "foto_adi" in row and pd.notna(row["foto_adi"]) and len(str(row["foto_adi"])) > 50:
-                            try:
-                                img_data = base64.b64decode(row["foto_adi"])
-                                img_bg = Image.open(io.BytesIO(img_data))
-                            except Exception:
-                                st.caption("Görsel yüklenirken bir hata oluştu.")
-                        else:
-                            st.caption("Sonradan çizim yapabilmek için görsel yüklenmemiş.")
-                        
-                        st.markdown("### ✍️ Tam Ekran Çözüm Alanı")
-                        
-                        c1, c2, c3 = st.columns(3)
-                        with c1:
-                            stroke_color = st.color_picker("Kalem Rengi", "#FF0000", key=f"color_{row['id']}")
-                        with c2:
-                            stroke_width = st.slider("Kalem Kalınlığı", 1, 20, 3, key=f"width_{row['id']}")
-                        with c3:
-                            drawing_mode = st.selectbox("Çizim Aracı", ["freedraw", "line", "rect"], key=f"mode_{row['id']}")
-                        
-                        st.markdown("💡 *Not: Yaptığın son çizgiyi silmek için tuvalin üstündeki araç çubuğundaki Geri Al (Undo) butonuna basabilir veya tamamen temizleyebilirsin.*")
-                        
-                        st_canvas(
-                            fill_color="rgba(255, 165, 0, 0.3)",
-                            stroke_width=stroke_width,
-                            stroke_color=stroke_color,
-                            background_image=img_bg,
-                            update_streamlit=True,
-                            height=850,
-                            drawing_mode=drawing_mode,
-                            key=f"canvas_{row['id']}",
-                        )
-                
-                st.markdown("---")
-                sil_y_id = st.selectbox("Öğrendiğin veya Sildiğin Soru ID'sini Seç", df_filtered_y["id"].tolist(), key="select_delete_yanlis")
-                if st.button("✅ Bu Soruyu Çözdüm / Defterden Sil", type="primary", key="btn_del_yanlis_item"):
-                    try:
-                        supabase.table("yanlis_defteri").delete().eq("id", sil_y_id).execute()
-                        st.success("Soru defterden kaldırıldı, tebrikler!")
-                        st.rerun()
-                    except Exception as e:
-                        st.error(f"Hata: {e}")
-            else:
-                st.warning("Seçilen kriterlere uygun yanlış soru bulunamadı.")
+
+            for _, row in df_filtered_y.iterrows():
+                with st.expander(f"📌 ID: {row['id']} | {row['ders']} - {row['konu']} ({row['tarih']})"):
+                    st.write(f"**Not / Açıklama:** {row['notlar']}")
+                    img_bg = None
+                    if "foto_adi" in row and pd.notna(row["foto_adi"]) and len(str(row["foto_adi"])) > 50:
+                        img_bg = Image.open(io.BytesIO(base64.b64decode(row["foto_adi"])))
+
+                    c1, c2, c3 = st.columns(3)
+                    with c1:
+                        stroke_color = st.color_picker("Kalem Rengi", "#FF0000", key=f"color_{row['id']}")
+                    with c2:
+                        stroke_width = st.slider("Kalem Kalınlığı", 1, 20, 3, key=f"width_{row['id']}")
+                    with c3:
+                        drawing_mode = st.selectbox("Çizim Aracı", ["freedraw", "line", "rect"], key=f"mode_{row['id']}")
+
+                    st_canvas(
+                        fill_color="rgba(255, 165, 0, 0.3)",
+                        stroke_width=stroke_width,
+                        stroke_color=stroke_color,
+                        background_image=img_bg,
+                        update_streamlit=True,
+                        height=650,
+                        drawing_mode=drawing_mode,
+                        key=f"canvas_{row['id']}",
+                    )
 
 # ------------------------------------------
-# TAB 3: KONU TAKİP ÇİZELGESİ (ÇENTİKLİ AÇ/KAPA + TÜM DERSLER TEK SAYFADA)
+# TAB 3: KONU TAKİP ÇİZELGESİ (TYT / AYT AYRIMLI & HAFİF)
 # ------------------------------------------
 with tabs[2]:
     st.header("✅ YKS Dijital Konu Takip Çizelgesi")
-    st.write("Ders başındaki çentiğe (`▾` / `▸`) basarak listeyi açıp kapatabilirsin. Her konu için **Bitmedi**, **Tekrar Lazım** veya **Bitti** butonuna bas.")
 
     if "konu_durum_map" not in st.session_state or st.session_state.get("loaded_user_id") != user_id:
         st.session_state["konu_durum_map"] = get_konu_durumlari(user_id)
         st.session_state["loaded_user_id"] = user_id
 
     if "ders_acik_state" not in st.session_state:
-        st.session_state["ders_acik_state"] = {ders: (ders == "TYT Türkçe") for ders in TUM_TAKIP_DERSLERI}
+        st.session_state["ders_acik_state"] = {"TYT Türkçe": True, "AYT Matematik": True}
 
     durum_map = st.session_state["konu_durum_map"]
     ders_acik_state = st.session_state["ders_acik_state"]
@@ -664,42 +571,29 @@ with tabs[2]:
 
     m_col1, m_col2 = st.columns(2)
     with m_col1:
-        tyt_oran_float = (biten_tyt / tum_tyt_sayisi) * 100 if tum_tyt_sayisi > 0 else 0.0
-        st.metric("📘 TYT Bitti Oranı", f"%{tyt_oran_float:.1f} ({biten_tyt}/{tum_tyt_sayisi})", delta=f"Tekrar Lazım: {tekrar_tyt}")
-        st.progress(min(max(tyt_oran_float / 100.0, 0.0), 1.0))
+        tyt_oran = (biten_tyt / tum_tyt_sayisi) * 100 if tum_tyt_sayisi else 0.0
+        st.metric("📘 TYT Bitti Oranı", f"%{tyt_oran:.1f} ({biten_tyt}/{tum_tyt_sayisi})", delta=f"Tekrar Lazım: {tekrar_tyt}")
+        st.progress(min(max(tyt_oran / 100.0, 0.0), 1.0))
     with m_col2:
-        ayt_oran_float = (biten_ayt / tum_ayt_sayisi) * 100 if tum_ayt_sayisi > 0 else 0.0
-        st.metric("📗 AYT Sayısal Bitti Oranı", f"%{ayt_oran_float:.1f} ({biten_ayt}/{tum_ayt_sayisi})", delta=f"Tekrar Lazım: {tekrar_ayt}")
-        st.progress(min(max(ayt_oran_float / 100.0, 0.0), 1.0))
+        ayt_oran = (biten_ayt / tum_ayt_sayisi) * 100 if tum_ayt_sayisi else 0.0
+        st.metric("📗 AYT Sayısal Bitti Oranı", f"%{ayt_oran:.1f} ({biten_ayt}/{tum_ayt_sayisi})", delta=f"Tekrar Lazım: {tekrar_ayt}")
+        st.progress(min(max(ayt_oran / 100.0, 0.0), 1.0))
 
     st.markdown("---")
+    st.subheader("📘 TYT Dersleri")
+    ders_bloklari_render(TYT_KONU_TAKIP, durum_map, ders_acik_state, "tyt")
 
-    for ders_adi, konular in TUM_TAKIP_DERSLERI.items():
-        ders_biten = sum(1 for k in konular if durum_map.get(f"{ders_adi}::{k}") == "Bitti")
-        ders_tekrar = sum(1 for k in konular if durum_map.get(f"{ders_adi}::{k}") == "Tekrar Lazım")
-        ders_yuzde = (ders_biten / len(konular)) * 100 if len(konular) > 0 else 0.0
-        acik_mi = ders_acik_state.get(ders_adi, False)
-        centik = "▾" if acik_mi else "▸"
-
-        if st.button(
-            f"{centik} {ders_adi} — %{ders_yuzde:.1f} Bitti ({ders_biten}/{len(konular)}) | Tekrar: {ders_tekrar}",
-            key=f"centik_btn_{ders_adi}",
-            type="primary" if acik_mi else "secondary",
-            use_container_width=True
-        ):
-            ders_acik_state[ders_adi] = not acik_mi
-            st.rerun()
-
-        if acik_mi:
-            konu_secici_render(ders_adi, konular, durum_map, "all")
+    st.markdown("---")
+    st.subheader("📗 AYT Dersleri (Sayısal)")
+    ders_bloklari_render(AYT_SAYISAL_KONU_TAKIP, durum_map, ders_acik_state, "ayt")
 
     st.markdown("---")
     if st.button("💾 Konu Durumlarını Kaydet", type="primary", use_container_width=True, key="btn_save_konu_takip"):
         if save_konu_durumlari(user_id, durum_map):
-            st.success("✅ Tüm konu durumları (Bitmedi / Tekrar Lazım / Bitti) başarıyla kaydedildi!")
+            st.success("✅ Tüm konu durumları kaydedildi!")
             st.rerun()
         else:
-            st.warning("⚠️ İlerleme oturuma kaydedildi ancak Supabase'de 'konu_takip' tablosu bulunamadı. Lütfen SQL komutunu çalıştırdığından emin ol.")
+            st.warning("⚠️ Kayıt sırasında 'konu_takip' tablosuna ulaşılamadı.")
 
 # ------------------------------------------
 # TAB 4: GENEL NET GRAFİKLERİ
@@ -715,22 +609,20 @@ with tabs[3]:
             filtre_turu = st.selectbox("Kayıt Türüne Göre", ["Tümü", "TYT Genel", "AYT Genel", "Branş Denemesi"], key="chart_filter_turu")
         with col_f2:
             filtre_ders = st.selectbox("Derse Göre", ["Tüm Dersler"] + DERS_LISTESI, key="chart_filter_ders")
-        
+
         df_filtered = df_denemeler.copy()
         if filtre_turu != "Tümü":
             df_filtered = df_filtered[df_filtered["kayit_turu"] == filtre_turu]
         if filtre_ders != "Tüm Dersler":
             df_filtered = df_filtered[df_filtered["ders"] == filtre_ders]
-        
+
         if not df_filtered.empty:
             fig = px.line(df_filtered, x="tarih", y="net", color="ders", hover_data=["yayin", "kayit_turu"], title="Zaman İçindeki Net Değişimi", markers=True)
             st.plotly_chart(fig, use_container_width=True)
             st.dataframe(df_filtered[["tarih", "yayin", "kayit_turu", "ders", "dogru", "yanlis", "net"]], use_container_width=True)
-        else:
-            st.warning("Seçilen filtrelerde deneme bulunamadı.")
 
 # ------------------------------------------
-# TAB 5: KONU ANALİZİ & PASTA GRAFİĞİ
+# TAB 5: KONU ANALİZİ & AKILLI UYARI
 # ------------------------------------------
 with tabs[4]:
     st.header("⚠️ Konu Analizi & Akıllı Uyarı")
@@ -740,29 +632,19 @@ with tabs[4]:
     else:
         secilen_analiz_dersi = st.selectbox("Ders Seçin", ["Tüm Dersler"] + DERS_LISTESI, key="konu_analiz_ders_select")
         df_konu = df_denemeler if secilen_analiz_dersi == "Tüm Dersler" else df_denemeler[df_denemeler["ders"].astype(str).str.strip() == secilen_analiz_dersi.strip()]
-        
+
         konu_listesi = []
-        for index, row in df_konu.iterrows():
+        for _, row in df_konu.iterrows():
             hatali = str(row["hatali_konular"]) if pd.notna(row["hatali_konular"]) else ""
-            if hatali.strip() != "" and hatali.lower() != "nan":
+            if hatali.strip() and hatali.lower() != "nan":
                 konu_listesi.extend([k.strip() for k in hatali.split(",") if k.strip()])
-                
+
         if konu_listesi:
             sıklık_df = pd.Series(konu_listesi).value_counts().reset_index()
             sıklık_df.columns = ["Konu", "Hata Frekansı"]
-            
-            col_k1, col_k2 = st.columns([2, 1])
-            with col_k1:
-                st.plotly_chart(px.bar(sıklık_df, x="Konu", y="Hata Frekansı", color="Hata Frekansı", title="Hata Sayıları (Sütun)", text_auto=True), use_container_width=True)
-                st.plotly_chart(px.pie(sıklık_df, names="Konu", values="Hata Frekansı", title="Hata Oranları Dağılımı (Pasta Grafiği)", hole=0.3), use_container_width=True)
-            with col_k2:
-                st.dataframe(sıklık_df, use_container_width=True)
-                
+            st.plotly_chart(px.bar(sıklık_df, x="Konu", y="Hata Frekansı", color="Hata Frekansı", title="Hata Sayıları", text_auto=True), use_container_width=True)
             en_cok_hata = sıklık_df.iloc[0]
-            st.error(f"🚨 **Akıllı Uyarı:** En çok sorun yaşadığın konu **'{en_cok_hata['Konu']}'** ({en_cok_hata['Hata Frekansı']} kez).")
-            if st.button("📲 Telegram'a Gönder", key="btn_send_telegram_alert"):
-                akilli_uyari_gonder(f"⚠️ *YKS Akıllı Uyarı*\n👤 {username}\n🚨 En Çok Hata: *{en_cok_hata['Konu']}* ({en_cok_hata['Hata Frekansı']} kez)")
-                st.success("Gönderildi!")
+            st.error(f"🚨 En çok sorun yaşadığın konu: **{en_cok_hata['Konu']}** ({en_cok_hata['Hata Frekansı']} kez)")
         else:
             st.success("Hatalı konu kaydı bulunmuyor.")
 
@@ -778,18 +660,16 @@ with tabs[5]:
         h_gorev = st.text_input("Görev", placeholder="Örn: 2 Saat Matematik", key="h_gorev_input")
         if st.button("Ekle", key="btn_add_hatirlatici"):
             if h_gorev:
-                supabase.table("hatirlaticilar").insert({"user_id": user_id, "tarih": str(h_tarih), "saat": str(h_saat), "gorev": h_gorev, "durum": "Bekliyor"}).execute()
-                st.success("Eklendi!")
+                supabase.table("hatirlaticilar").insert({
+                    "user_id": user_id, "tarih": str(h_tarih), "saat": str(h_saat),
+                    "gorev": h_gorev, "durum": "Bekliyor"
+                }).execute()
+                get_hatirlaticilar.clear()
                 st.rerun()
     with col_h2:
         df_hatirlatici = get_hatirlaticilar(user_id)
         if not df_hatirlatici.empty:
             st.dataframe(df_hatirlatici[["id", "tarih", "saat", "gorev", "durum"]], use_container_width=True)
-            sil_id = st.selectbox("Görev ID", df_hatirlatici["id"].tolist(), key="select_del_h")
-            if st.button("Görevi Sil", key="btn_delete_hatirlatici"):
-                supabase.table("hatirlaticilar").delete().eq("id", sil_id).execute()
-                st.success("Silindi!")
-                st.rerun()
 
 # ------------------------------------------
 # TAB 7: YÖNETİCİ PANELİ
