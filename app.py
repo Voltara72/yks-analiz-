@@ -152,6 +152,8 @@ AYT_SAYISAL_KONU_TAKIP = {
     "AYT Biyoloji": HAZIR_KONULAR["AYT Biyoloji"]
 }
 
+TUM_TAKIP_DERSLERI = {**TYT_KONU_TAKIP, **AYT_SAYISAL_KONU_TAKIP}
+
 KONU_DURUMLARI = ["Bitmedi", "Tekrar Lazım", "Bitti"]
 
 # ==========================================
@@ -635,11 +637,11 @@ with tabs[1]:
                 st.warning("Seçilen kriterlere uygun yanlış soru bulunamadı.")
 
 # ------------------------------------------
-# TAB 3: KONU TAKİP ÇİZELGESİ (BITTI / TEKRAR LAZIM / BITMEDI)
+# TAB 3: KONU TAKİP ÇİZELGESİ (TÜM DERSLER TEK SAYFADA)
 # ------------------------------------------
 with tabs[2]:
     st.header("✅ YKS Dijital Konu Takip Çizelgesi")
-    st.write("Dersi seç, büyük buton kutulardan **Bitmedi**, **Tekrar Lazım** veya **Bitti** durumunu işaretle. Seçtiğinde **✓** işareti çıkar ve yüzdeler anlık hesaplanır.")
+    st.write("Tüm dersler tek sayfada alt alta listelenir. Her konu için **Bitmedi**, **Tekrar Lazım** veya **Bitti** butonuna bas; yüzdeler anlık güncellenir.")
 
     if "konu_durum_map" not in st.session_state or st.session_state.get("loaded_user_id") != user_id:
         st.session_state["konu_durum_map"] = get_konu_durumlari(user_id)
@@ -667,29 +669,18 @@ with tabs[2]:
         st.progress(min(max(ayt_oran_float / 100.0, 0.0), 1.0))
 
     st.markdown("---")
-    tab_tyt_takip, tab_ayt_takip = st.tabs(["📘 TYT Konuları (Tüm Dersler)", "📗 AYT Konuları (Sayısal: Mat - Fiz - Kim - Biyo)"])
+    ders_filtre = st.selectbox("İstersen Tek Derse Odaklan (Ya da Tüm Dersler Tek Sayfada kalsın)", ["Tüm Dersler"] + list(TUM_TAKIP_DERSLERI.keys()), key="tek_sayfa_ders_filtre")
 
-    with tab_tyt_takip:
-        st.subheader("📘 TYT Tüm Dersler Konu Listesi")
-        secili_tyt_ders = st.selectbox("TYT Dersi Seçin", list(TYT_KONU_TAKIP.keys()), key="sel_tyt_ders_takip")
-        konular = TYT_KONU_TAKIP[secili_tyt_ders]
-        ders_biten = sum(1 for k in konular if durum_map.get(f"{secili_tyt_ders}::{k}") == "Bitti")
-        ders_tekrar = sum(1 for k in konular if durum_map.get(f"{secili_tyt_ders}::{k}") == "Tekrar Lazım")
+    gosterilecek_dersler = TUM_TAKIP_DERSLERI if ders_filtre == "Tüm Dersler" else {ders_filtre: TUM_TAKIP_DERSLERI[ders_filtre]}
+
+    for ders_adi, konular in gosterilecek_dersler.items():
+        ders_biten = sum(1 for k in konular if durum_map.get(f"{ders_adi}::{k}") == "Bitti")
+        ders_tekrar = sum(1 for k in konular if durum_map.get(f"{ders_adi}::{k}") == "Tekrar Lazım")
         ders_yuzde = (ders_biten / len(konular)) * 100 if len(konular) > 0 else 0.0
-        st.info(f"📌 **{secili_tyt_ders}** — **%{ders_yuzde:.1f}** Bitti ({ders_biten}/{len(konular)}) | Tekrar Lazım: **{ders_tekrar}**")
-        konu_secici_render(secili_tyt_ders, konular, durum_map, "tyt")
+        st.subheader(f"📌 {ders_adi} — %{ders_yuzde:.1f} Bitti ({ders_biten}/{len(konular)}) | Tekrar Lazım: {ders_tekrar}")
+        konu_secici_render(ders_adi, konular, durum_map, "all")
+        st.markdown("---")
 
-    with tab_ayt_takip:
-        st.subheader("📗 AYT Sayısal Dersler Konu Listesi")
-        secili_ayt_ders = st.selectbox("AYT Sayısal Dersi Seçin", list(AYT_SAYISAL_KONU_TAKIP.keys()), key="sel_ayt_ders_takip")
-        konular = AYT_SAYISAL_KONU_TAKIP[secili_ayt_ders]
-        ders_biten = sum(1 for k in konular if durum_map.get(f"{secili_ayt_ders}::{k}") == "Bitti")
-        ders_tekrar = sum(1 for k in konular if durum_map.get(f"{secili_ayt_ders}::{k}") == "Tekrar Lazım")
-        ders_yuzde = (ders_biten / len(konular)) * 100 if len(konular) > 0 else 0.0
-        st.info(f"📌 **{secili_ayt_ders}** — **%{ders_yuzde:.1f}** Bitti ({ders_biten}/{len(konular)}) | Tekrar Lazım: **{ders_tekrar}**")
-        konu_secici_render(secili_ayt_ders, konular, durum_map, "ayt")
-
-    st.markdown("---")
     if st.button("💾 Konu Durumlarını Kaydet", type="primary", use_container_width=True, key="btn_save_konu_takip"):
         if save_konu_durumlari(user_id, durum_map):
             st.success("✅ Tüm konu durumları (Bitmedi / Tekrar Lazım / Bitti) başarıyla kaydedildi!")
