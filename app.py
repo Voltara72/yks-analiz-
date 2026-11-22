@@ -583,21 +583,11 @@ with tabs[1]:
 # ------------------------------------------
 with tabs[2]:
     st.header("✅ YKS Dijital Konu Takip Çizelgesi")
-    st.write("Ders kutucuğunu aç/kapat; her konu için **Bitti**, **Tekrar Lazım** veya **Bitmedi** durumunu seç. Yüzdeler anlık hesaplanır.")
+    st.write("Dersi seç, her konu için **Bitmedi**, **Tekrar Lazım** veya **Bitti** durumunu işaretle. Yüzdeler anlık hesaplanır.")
 
     if "konu_durum_map" not in st.session_state or st.session_state.get("loaded_user_id") != user_id:
         st.session_state["konu_durum_map"] = get_konu_durumlari(user_id)
         st.session_state["loaded_user_id"] = user_id
-
-    for ders_adi in TYT_KONU_TAKIP:
-        exp_key = f"exp_tyt_{ders_adi}"
-        if exp_key not in st.session_state:
-            st.session_state[exp_key] = False
-
-    for ders_adi in AYT_SAYISAL_KONU_TAKIP:
-        exp_key = f"exp_ayt_{ders_adi}"
-        if exp_key not in st.session_state:
-            st.session_state[exp_key] = True
 
     mevcut_durumlar = st.session_state["konu_durum_map"]
 
@@ -635,51 +625,51 @@ with tabs[2]:
 
     with tab_tyt_takip:
         st.subheader("📘 TYT Tüm Dersler Konu Listesi")
-        for ders_adi, konular in TYT_KONU_TAKIP.items():
-            ders_biten = sum(1 for k in konular if aktif_durumlar.get(f"{ders_adi}::{k}") == "Bitti")
-            ders_tekrar = sum(1 for k in konular if aktif_durumlar.get(f"{ders_adi}::{k}") == "Tekrar Lazım")
-            ders_yuzde = (ders_biten / len(konular)) * 100 if len(konular) > 0 else 0.0
-            exp_key = f"exp_tyt_{ders_adi}"
-            acik_mi = st.checkbox(f"📂 {ders_adi} — %{ders_yuzde:.1f} Bitti ({ders_biten}/{len(konular)}) | Tekrar: {ders_tekrar}", key=exp_key)
-            if acik_mi:
-                with st.container(border=True):
-                    cols = st.columns(2)
-                    for idx, konu in enumerate(konular):
-                        anahtar = f"{ders_adi}::{konu}"
-                        onceki_durum = mevcut_durumlar.get(anahtar, "Bitmedi")
-                        varsayilan_idx = KONU_DURUMLARI.index(onceki_durum) if onceki_durum in KONU_DURUMLARI else 0
-                        with cols[idx % 2]:
-                            st.radio(
-                                konu,
-                                options=KONU_DURUMLARI,
-                                index=varsayilan_idx,
-                                horizontal=True,
-                                key=f"rad_tyt_{anahtar}"
-                            )
+        secili_tyt_ders = st.selectbox("TYT Dersi Seçin", list(TYT_KONU_TAKIP.keys()), key="sel_tyt_ders_takip")
+        konular = TYT_KONU_TAKIP[secili_tyt_ders]
+        ders_biten = sum(1 for k in konular if aktif_durumlar.get(f"{secili_tyt_ders}::{k}") == "Bitti")
+        ders_tekrar = sum(1 for k in konular if aktif_durumlar.get(f"{secili_tyt_ders}::{k}") == "Tekrar Lazım")
+        ders_yuzde = (ders_biten / len(konular)) * 100 if len(konular) > 0 else 0.0
+        st.info(f"📌 **{secili_tyt_ders}** — **%{ders_yuzde:.1f}** Bitti ({ders_biten}/{len(konular)}) | Tekrar Lazım: **{ders_tekrar}**")
+
+        with st.container(border=True):
+            cols = st.columns(2)
+            for idx, konu in enumerate(konular):
+                anahtar = f"{secili_tyt_ders}::{konu}"
+                onceki_durum = mevcut_durumlar.get(anahtar, "Bitmedi")
+                varsayilan_idx = KONU_DURUMLARI.index(onceki_durum) if onceki_durum in KONU_DURUMLARI else 0
+                with cols[idx % 2]:
+                    st.radio(
+                        konu,
+                        options=KONU_DURUMLARI,
+                        index=varsayilan_idx,
+                        horizontal=True,
+                        key=f"rad_tyt_{anahtar}"
+                    )
 
     with tab_ayt_takip:
         st.subheader("📗 AYT Sayısal Dersler Konu Listesi")
-        for ders_adi, konular in AYT_SAYISAL_KONU_TAKIP.items():
-            ders_biten = sum(1 for k in konular if aktif_durumlar.get(f"{ders_adi}::{k}") == "Bitti")
-            ders_tekrar = sum(1 for k in konular if aktif_durumlar.get(f"{ders_adi}::{k}") == "Tekrar Lazım")
-            ders_yuzde = (ders_biten / len(konular)) * 100 if len(konular) > 0 else 0.0
-            exp_key = f"exp_ayt_{ders_adi}"
-            acik_mi = st.checkbox(f"📂 {ders_adi} — %{ders_yuzde:.1f} Bitti ({ders_biten}/{len(konular)}) | Tekrar: {ders_tekrar}", key=exp_key)
-            if acik_mi:
-                with st.container(border=True):
-                    cols = st.columns(2)
-                    for idx, konu in enumerate(konular):
-                        anahtar = f"{ders_adi}::{konu}"
-                        onceki_durum = mevcut_durumlar.get(anahtar, "Bitmedi")
-                        varsayilan_idx = KONU_DURUMLARI.index(onceki_durum) if onceki_durum in KONU_DURUMLARI else 0
-                        with cols[idx % 2]:
-                            st.radio(
-                                konu,
-                                options=KONU_DURUMLARI,
-                                index=varsayilan_idx,
-                                horizontal=True,
-                                key=f"rad_ayt_{anahtar}"
-                            )
+        secili_ayt_ders = st.selectbox("AYT Sayısal Dersi Seçin", list(AYT_SAYISAL_KONU_TAKIP.keys()), key="sel_ayt_ders_takip")
+        konular = AYT_SAYISAL_KONU_TAKIP[secili_ayt_ders]
+        ders_biten = sum(1 for k in konular if aktif_durumlar.get(f"{secili_ayt_ders}::{k}") == "Bitti")
+        ders_tekrar = sum(1 for k in konular if aktif_durumlar.get(f"{secili_ayt_ders}::{k}") == "Tekrar Lazım")
+        ders_yuzde = (ders_biten / len(konular)) * 100 if len(konular) > 0 else 0.0
+        st.info(f"📌 **{secili_ayt_ders}** — **%{ders_yuzde:.1f}** Bitti ({ders_biten}/{len(konular)}) | Tekrar Lazım: **{ders_tekrar}**")
+
+        with st.container(border=True):
+            cols = st.columns(2)
+            for idx, konu in enumerate(konular):
+                anahtar = f"{secili_ayt_ders}::{konu}"
+                onceki_durum = mevcut_durumlar.get(anahtar, "Bitmedi")
+                varsayilan_idx = KONU_DURUMLARI.index(onceki_durum) if onceki_durum in KONU_DURUMLARI else 0
+                with cols[idx % 2]:
+                    st.radio(
+                        konu,
+                        options=KONU_DURUMLARI,
+                        index=varsayilan_idx,
+                        horizontal=True,
+                        key=f"rad_ayt_{anahtar}"
+                    )
 
     st.markdown("---")
     if st.button("💾 Konu Durumlarını Kaydet", type="primary", use_container_width=True, key="btn_save_konu_takip"):
